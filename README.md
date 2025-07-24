@@ -1,11 +1,11 @@
 # libCacheSim Python Binding
 
-[![Python Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
+[![Build](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml)
 [![Python Versions](https://img.shields.io/pypi/pyversions/libcachesim.svg?logo=python&logoColor=white)](https://pypi.org/project/libcachesim)
 [![PyPI Version](https://img.shields.io/pypi/v/libcachesim.svg?)](https://pypi.org/project/libcachesim)
 [![PyPI - Downloads](https://img.shields.io/pypi/dd/libcachesim)](https://pypistats.org/packages/libcachesim)
 
-Python bindings for libCacheSim, a high-performance cache simulator and analysis library.
+Python bindings for [libCacheSim](https://github.com/1a1a11a/libCacheSim), a high-performance cache simulator and analysis library.
 
 ## Installation
 
@@ -20,25 +20,13 @@ pip install libcachesim
 If there are no wheels suitable for your environment, consider building from source.
 
 ```bash
-git clone https://github.com/1a1a11a/libCacheSim.git
-cd libCacheSim
-
-# Build the main libCacheSim library first
-cmake -G Ninja -B build
-ninja -C build
-
-# Install Python binding
-cd libCacheSim-python
-pip install -e .
+bash scripts/install.sh
 ```
 
-### Testing
-```bash
-# Run all tests
-python -m pytest .
+Run all tests to ensure the package works.
 
-# Test import
-python -c "import libcachesim; print('Success!')"
+```bash
+python -m pytest tests/
 ```
 
 ## Quick Start

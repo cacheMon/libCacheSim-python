@@ -10,6 +10,15 @@ def test_analyzer_common():
 
     reader = TraceReader(file_path)
 
-    analyzer = TraceAnalyzer(reader, output_path="./")
+    analyzer = TraceAnalyzer(reader, "TestAnalyzerResults")
 
     analyzer.run()
+
+    # Clean file after test, match all files with the prefix "TestAnalyzerResults"
+    for file in os.listdir("."):
+        if file.startswith("TestAnalyzerResults"):
+            os.remove(file)
+    # Remove file named "stat"
+    stat_file = "stat"
+    if os.path.exists(stat_file):
+        os.remove(stat_file)

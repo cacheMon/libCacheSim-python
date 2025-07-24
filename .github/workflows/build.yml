@@ -1,0 +1,38 @@
+name: Build and Test libCacheSim-python
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Init submodules
+        run: git submodule update --init --recursive
+
+      - name: Prepare
+        run: bash src/libCacheSim/scripts/install_dependency.sh
+
+      - name: Build main libCacheSim project
+        run: |
+          pushd src/libCacheSim
+          cmake -G Ninja -B build
+          ninja -C build
+          popd
+
+      - name: Build libCacheSim-python
+        run: |
+          pip install -e .[dev]
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/

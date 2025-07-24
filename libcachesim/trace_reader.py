@@ -1,7 +1,7 @@
 """Wrapper of Reader"""
 
 import logging
-from typing import overload, Union
+from typing import overload, Union, Optional
 from collections.abc import Iterator
 
 from .protocols import ReaderProtocol
@@ -22,53 +22,19 @@ class TraceReader(ReaderProtocol):
         self,
         trace: Union[Reader, str],
         trace_type: TraceType = TraceType.UNKNOWN_TRACE,
-        ignore_obj_size: bool = False,
-        ignore_size_zero_req: bool = False,
-        obj_id_is_num: bool = False,
-        obj_id_is_num_set: bool = False,
-        cap_at_n_req: int = -1,
-        block_size: int = 0,
-        has_header: bool = False,
-        has_header_set: bool = False,
-        delimiter: str = ",",
-        trace_start_offset: int = 0,
-        binary_fmt_str: str = "",
-        sampling_ratio: float = 1.0,
-        sampling_type: SamplerType = SamplerType.INVALID_SAMPLER,
+        reader_init_params: Optional[ReaderInitParam] = None,
     ):
+
         if isinstance(trace, Reader):
             self._reader = trace
             return
 
-        # Process sampling_type
-        if sampling_ratio < 0.0 or sampling_ratio > 1.0:
-            raise ValueError("Sampling ratio must be between 0.0 and 1.0")
+        if reader_init_params is None:
+            reader_init_params = ReaderInitParam()
 
-        if sampling_ratio == 1.0:
-            sampler = None
-        else:
-            if sampling_type == SamplerType.INVALID_SAMPLER:
-                logging.warning("Sampling type is invalid, using SPATIAL_SAMPLER instead")
-                sampling_type = SamplerType.SPATIAL_SAMPLER
-            logging.info(f"Sampling ratio: {sampling_ratio}, Sampling type: {sampling_type}")
-            sampler = Sampler(sampling_ratio, sampling_type)
-
-        # Construct ReaderInitParam
-        reader_init_params = ReaderInitParam(
-            binary_fmt_str=binary_fmt_str,
-            ignore_obj_size=ignore_obj_size,
-            ignore_size_zero_req=ignore_size_zero_req,
-            obj_id_is_num=obj_id_is_num,
-            obj_id_is_num_set=obj_id_is_num_set,
-            cap_at_n_req=cap_at_n_req,
-            block_size=block_size,
-            has_header=has_header,
-            has_header_set=has_header_set,
-            delimiter=delimiter,
-            trace_start_offset=trace_start_offset,
-            sampler=sampler,
-        )
-
+        if not isinstance(reader_init_params, ReaderInitParam):
+            raise TypeError("reader_init_params must be an instance of ReaderInitParam")
+            
         self._reader = Reader(trace, trace_type, reader_init_params)
 
     @property
