@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.15...3.27)
+project(libCacheSim-python)
+set(DESCRIPTION "The libCacheSim Python Package")
+set(PROJECT_WEB "http://cachemon.github.io/libCacheSim-python")
+
+# Note(haocheng): now we still utilize the exported cache from 
+# the main project, which should be deprecated soon 
 
 # Include exported variables from cache
 if(DEFINED LIBCB_BUILD_DIR)
-    set(PARENT_BUILD_DIR "${LIBCB_BUILD_DIR}")
+    set(MAIN_PROJECT_BUILD_DIR "${LIBCB_BUILD_DIR}")
     message(STATUS "Using provided LIBCB_BUILD_DIR: ${LIBCB_BUILD_DIR}")
 else()
-    set(PARENT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build")
+    set(MAIN_PROJECT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
 endif()
-set(EXPORT_FILE "${PARENT_BUILD_DIR}/export_vars.cmake")
+set(EXPORT_FILE "${MAIN_PROJECT_BUILD_DIR}/export_vars.cmake")
 
 if(EXISTS "${EXPORT_FILE}")
     include("${EXPORT_FILE}")
@@ -56,7 +62,7 @@ include_directories(${ZSTD_INCLUDE_DIR})
 include_directories(${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin)
 
 # Find the main libCacheSim library
-set(MAIN_PROJECT_BUILD_DIR "${PARENT_BUILD_DIR}")
+set(MAIN_PROJECT_BUILD_DIR "${MAIN_PROJECT_BUILD_DIR}")
 set(MAIN_PROJECT_LIB_PATH "${MAIN_PROJECT_BUILD_DIR}/liblibCacheSim.a")
 
 if(EXISTS "${MAIN_PROJECT_LIB_PATH}")
