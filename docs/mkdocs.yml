@@ -56,7 +56,6 @@ plugins:
       fallback_to_default: true
       reconfigure_material: true
       reconfigure_search: true
-      default_language_only: false
       languages:
         - locale: en
           default: true
@@ -70,14 +69,6 @@ plugins:
             Quick Start: 快速开始
             API Reference: API参考
             Examples: 使用示例
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [../src]
-          options:
-            docstring_style: google
-            show_source: true
-            show_root_heading: true
 
 markdown_extensions:
   - admonition

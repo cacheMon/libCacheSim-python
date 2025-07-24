@@ -1,4 +1,4 @@
-name: Build and Test libCacheSim-python
+name: Build
 
 on: [push, pull_request]
 
@@ -36,3 +36,30 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest tests/
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-docs-${{ hashFiles('docs/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-docs-
+
+      - name: Install documentation dependencies
+        run: |
+          pip install -r docs/requirements.txt
+
+      - name: Test documentation build
+        run: |
+          cd docs
+          mkdocs build --clean --strict

@@ -1,11 +1,14 @@
 # libCacheSim Python Binding
 
 [![Build](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml)
-[![Python Versions](https://img.shields.io/pypi/pyversions/libcachesim.svg?logo=python&logoColor=white)](https://pypi.org/project/libcachesim)
-[![PyPI Version](https://img.shields.io/pypi/v/libcachesim.svg?)](https://pypi.org/project/libcachesim)
-[![PyPI - Downloads](https://img.shields.io/pypi/dd/libcachesim)](https://pypistats.org/packages/libcachesim)
+[![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml)
 
 Python bindings for [libCacheSim](https://github.com/1a1a11a/libCacheSim), a high-performance cache simulator and analysis library.
+
+## 📚 Documentation
+
+- **[English Documentation](https://cacheMon.github.io/libCacheSim-python/en/)** - Complete API reference, tutorials, and examples
+- **[中文文档](https://cacheMon.github.io/libCacheSim-python/zh/)** - 完整的API参考、教程和示例
 
 ## Installation
 
@@ -28,6 +31,16 @@ Run all tests to ensure the package works.
 ```bash
 python -m pytest tests/
 ```
+
+## 🚀 Features
+
+- **High-Performance Cache Simulation**: Built on the proven libCacheSim C++ library
+- **Multiple Cache Algorithms**: LRU, LFU, FIFO, ARC, S3FIFO, Sieve, TinyLFU, and more
+- **Trace Processing**: Support for various trace formats (CSV, binary, Oracle, etc.)
+- **Synthetic Workload Generation**: Zipf, uniform, and custom distributions
+- **Trace Analysis**: Comprehensive workload analysis and visualization tools
+- **Custom Cache Policies**: Implement new algorithms using Python hooks
+- **Multi-language Documentation**: English and Chinese documentation with examples
 
 ## Quick Start
 
