@@ -7,59 +7,55 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-14]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          submodules: recursive
 
-      - name: Init submodules
-        run: git submodule update --init --recursive
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
 
-      - name: Prepare
-        run: bash src/libCacheSim/scripts/install_dependency.sh
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-      - name: Build main libCacheSim project
+      - name: Build and test with uv
         run: |
-          pushd src/libCacheSim
-          cmake -G Ninja -B build
-          ninja -C build
-          popd
-
-      - name: Build libCacheSim-python
-        run: |
-          pip install -e .[dev]
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install -e .[dev]
+          uv run python -c "import libcachesim; print('✓ Import successful for Python ${{ matrix.python-version }} on ${{ matrix.os }}')"
 
       - name: Run tests
         run: |
-          python -m pytest tests/
+          if [ -d "tests" ]; then
+            uv run python -m pytest tests/ -v
+          else
+            echo "No tests directory found, skipping tests"
+          fi
 
   docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
       - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
+        run: uv python install 3.11
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-docs-${{ hashFiles('docs/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-docs-
-
-      - name: Install documentation dependencies
-        run: |
-          pip install -r docs/requirements.txt
-
-      - name: Test documentation build
+      - name: Install documentation dependencies and build
         run: |
           cd docs
-          mkdocs build --clean --strict
+          uv venv
+          uv pip install -r requirements.txt
+          uv run mkdocs build --clean --strict

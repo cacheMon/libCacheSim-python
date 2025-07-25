@@ -3,6 +3,50 @@ project(libCacheSim-python)
 set(DESCRIPTION "The libCacheSim Python Package")
 set(PROJECT_WEB "http://cachemon.github.io/libCacheSim-python")
 
+# Auto-initialize submodules if not already done
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # Check if submodule is initialized
+    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/src/libCacheSim/CMakeLists.txt")
+        message(STATUS "Initializing git submodules...")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}")
+        endif()
+    endif()
+endif()
+
+# Auto-build libCacheSim if needed
+set(LIBCACHESIM_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim")
+if(NOT EXISTS "${LIBCACHESIM_SOURCE_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR "libCacheSim submodule not found. Please run 'git submodule update --init --recursive'")
+endif()
+
+# Build libCacheSim first
+set(LIBCACHESIM_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
+if(NOT EXISTS "${LIBCACHESIM_BUILD_DIR}/export_vars.cmake")
+    message(STATUS "Building libCacheSim...")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE CMAKE_CONFIG_RESULT
+    )
+    if(NOT CMAKE_CONFIG_RESULT EQUAL "0")
+        message(FATAL_ERROR "Failed to configure libCacheSim")
+    endif()
+    
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} --build ${LIBCACHESIM_BUILD_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE CMAKE_BUILD_RESULT
+    )
+    if(NOT CMAKE_BUILD_RESULT EQUAL "0")
+        message(FATAL_ERROR "Failed to build libCacheSim")
+    endif()
+endif()
+
 # Note(haocheng): now we still utilize the exported cache from 
 # the main project, which should be deprecated soon 
 
