@@ -1,53 +1,62 @@
-site_name: libCacheSim Python Documentation
+site_name: libCacheSim Python
 site_url: https://cachemon.github.io/libCacheSim-python/
 repo_url: https://github.com/cacheMon/libCacheSim-python
 repo_name: cacheMon/libCacheSim-python
+edit_uri: edit/main/docs/src/
 
 docs_dir: src
 
 nav:
-  - Home: index.md
-  - Quick Start: quickstart.md
-  - API Reference: api.md
-  - Examples: examples.md
+  - Home: 
+    - libCacheSim Python: index.md
+  - Getting Started:
+    - Quick Start: quickstart.md
+  - API Reference:
+    - API Documentation: api.md
+  - Examples:
+    - Usage Examples: examples.md
 
 theme:
   name: material
   language: en
   palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
     # Palette toggle for light mode
-    - scheme: default
-      primary: custom
-      accent: custom
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    # Palette toggle for dark mode  
-    - scheme: slate
-      primary: custom
-      accent: custom
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
+        name: Switch to system preference
   font:
     text: Open Sans
   features:
-    - header.autohide
+    - content.action.edit
+    - content.code.copy
+    - content.tabs.link
+    - navigation.tracking
     - navigation.tabs
-    - navigation.footer
+    - navigation.tabs.sticky
     - navigation.sections
-    - navigation.expand
-    - navigation.path
+    - navigation.prune
     - navigation.top
-    - toc.follow
     - search.highlight
     - search.share
-    - search.suggest
-    - content.code.copy
-    - content.code.annotate
+    - toc.follow
 
 extra_css:
-  - ../stylesheets/extra.css
+  - stylesheets/extra.css
 
 plugins:
   - search
@@ -71,6 +80,8 @@ plugins:
             Examples: 使用示例
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
   - admonition
   - pymdownx.details
   - pymdownx.superfences:
@@ -78,18 +89,20 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.tabbed:
-      alternate_style: true
   - pymdownx.keys
   - pymdownx.mark
   - pymdownx.tilde
-  - codehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - toc:
       permalink: true
   - tables

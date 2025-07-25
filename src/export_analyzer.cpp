@@ -129,7 +129,8 @@ void export_analyzer(py::module& m) {
            "reader"_a, "output_path"_a,
            "option"_a = traceAnalyzer::default_option(),
            "param"_a = traceAnalyzer::default_param())
-      .def("run", &traceAnalyzer::TraceAnalyzer::run);
+      .def("run", &traceAnalyzer::TraceAnalyzer::run)
+      .def("cleanup", &traceAnalyzer::TraceAnalyzer::cleanup);
 }
 
 }  // namespace libcachesim

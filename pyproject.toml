@@ -1,5 +1,9 @@
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11"]
+requires = [
+    "scikit-build-core>=0.10", 
+    "pybind11",
+    "setuptools_scm[toml]>=6.2"
+]
 build-backend = "scikit_build_core.build"
 
 
@@ -36,6 +40,13 @@ dev = [
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
+build-dir = "build"
+cmake.build-type = "Release"
+cmake.args = ["-G", "Ninja"]
+cmake.define = { CMAKE_OSX_DEPLOYMENT_TARGET = "14.0" }
+cmake.version = ">=3.15"
+cmake.source-dir = "."
+install.strip = false
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -70,11 +81,11 @@ test-command = "python -c 'import libcachesim; print(\"Import successful\")'"
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y ninja-build cmake libzstd-devel glib2-devel"
-before-build = "rm -rf {project}/src/libCacheSim/build && cmake -S {project} -B {project}/src/libCacheSim/build -G Ninja && cmake --build {project}/src/libCacheSim/build"
+before-build = "git submodule update --init --recursive && rm -rf {project}/src/libCacheSim/build && cmake -S {project} -B {project}/src/libCacheSim/build -G Ninja && cmake --build {project}/src/libCacheSim/build"
 
 [tool.cibuildwheel.macos]
 before-all = "brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm"
-before-build = "rm -rf {project}/src/libCacheSim/build && cmake -S {project} -B {project}/src/libCacheSim/build -G Ninja -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 && cmake --build {project}/src/libCacheSim/build"
+before-build = "git submodule update --init --recursive && rm -rf {project}/src/libCacheSim/build && cmake -S {project} -B {project}/src/libCacheSim/build -G Ninja -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 && cmake --build {project}/src/libCacheSim/build"
 
 [tool.ruff]
 # Allow lines to be as long as 120.
