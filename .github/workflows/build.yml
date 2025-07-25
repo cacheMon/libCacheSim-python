@@ -66,7 +66,9 @@ jobs:
 
       - name: Install documentation dependencies and build
         run: |
+          # Install MkDocs and dependencies using pip in a temporary venv
+          python3 -m venv temp-docs-env
+          source temp-docs-env/bin/activate
+          pip install -r docs/requirements.txt
           cd docs
-          uv venv
-          uv pip install -r requirements.txt
-          uv run mkdocs build --clean --strict
+          mkdocs build --clean --strict
