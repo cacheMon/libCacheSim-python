@@ -35,7 +35,7 @@ jobs:
       - name: Install system dependencies (macOS)
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-14'
         run: |
-          brew install glib pkg-config zstd
+          brew install glib pkg-config zstd argp-standalone
 
       - name: Build and test with uv
         run: |
