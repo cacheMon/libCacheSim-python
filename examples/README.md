@@ -59,7 +59,7 @@ caches = {
 }
 
 # Create Python hook cache
-python_cache = lcs.PythonHookCachePolicy(cache_size, "CustomLRU")
+python_cache = lcs.PluginCache(cache_size, "CustomLRU")
 # Set hook functions...
 caches["Custom Python LRU"] = python_cache
 
@@ -101,7 +101,7 @@ class LRUPolicy:
         return next(iter(self.access_order))
 
 def create_lru_cache(cache_size):
-    cache = lcs.PythonHookCachePolicy(cache_size, "PythonLRU")
+    cache = lcs.PluginCache(cache_size, "PythonLRU")
 
     def init_hook(cache_size):
         return LRUPolicy(cache_size)
@@ -166,7 +166,7 @@ for alpha in alphas:
 ### Cache Algorithms
 - **Classic algorithms**: `LRU()`, `FIFO()`, `ARC()`, `Clock()`
 - **Modern algorithms**: `S3FIFO()`, `Sieve()`, `TinyLFU()`
-- **Custom policies**: `PythonHookCachePolicy()`
+- **Custom policies**: `PluginCache()`
 
 ### Trace Processing
 - `open_trace()`: Open real trace files
