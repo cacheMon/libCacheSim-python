@@ -100,7 +100,7 @@ Implement custom cache replacement algorithms using pure Python functions - **no
 
 ### Python Hook Cache Overview
 
-The `PythonHookCachePolicy` allows you to define custom caching behavior through Python callback functions. This is perfect for:
+The `PluginCache` allows you to define custom caching behavior through Python callback functions. This is perfect for:
 - Prototyping new cache algorithms
 - Educational purposes and learning
 - Research and experimentation
@@ -124,7 +124,7 @@ import libcachesim as lcs
 from collections import OrderedDict
 
 # Create a Python hook-based cache
-cache = lcs.PythonHookCachePolicy(cache_size=1024*1024, cache_name="MyLRU")
+cache = lcs.PluginCache(cache_size=1024*1024, cache_name="MyLRU")
 
 # Define LRU policy hooks
 def init_hook(cache_size):
@@ -160,7 +160,7 @@ import libcachesim as lcs
 from collections import deque
 from contextlib import suppress
 
-cache = lcs.PythonHookCachePolicy(cache_size=1024, cache_name="CustomFIFO")
+cache = lcs.PluginCache(cache_size=1024, cache_name="CustomFIFO")
 
 def init_hook(cache_size):
     return deque()  # Use deque for FIFO order

@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Protocol
+from typing import Protocol, Callable, Optional
 from .libcachesim_python import (
     CommonCacheParams,
     Request,
@@ -351,29 +351,23 @@ class BeladySize(CacheBase):
 
 
 # Plugin cache for custom Python implementations
-def nop_method(*args, **kwargs):
-    """No-operation method for default hooks"""
-    pass
-
-
-class PythonHookCachePolicy(CacheBase):
+class PluginCache(CacheBase):
     """Python plugin cache for custom implementations"""
 
     def __init__(
         self,
         cache_size: int,
+        cache_init_hook: Callable,
+        cache_hit_hook: Callable,
+        cache_miss_hook: Callable,
+        cache_eviction_hook: Callable,
+        cache_remove_hook: Callable,
+        cache_free_hook: Optional[Callable] = None,
         cache_name: str = "PythonHookCache",
         default_ttl: int = 86400 * 300,
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
-        cache_init_hook=nop_method,
-        cache_hit_hook=nop_method,
-        cache_miss_hook=nop_method,
-        cache_eviction_hook=nop_method,
-        cache_remove_hook=nop_method,
-        cache_free_hook=nop_method,
     ):
-        self.cache_name = cache_name
         self.common_cache_params = _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)
 
         super().__init__(
@@ -388,9 +382,3 @@ class PythonHookCachePolicy(CacheBase):
                 cache_free_hook,
             )
         )
-
-    def set_hooks(self, init_hook, hit_hook, miss_hook, eviction_hook, remove_hook, free_hook=nop_method):
-        """Set the cache hooks after initialization"""
-        # Note: This would require C++ side support to change hooks after creation
-        # For now, hooks should be set during initialization
-        pass

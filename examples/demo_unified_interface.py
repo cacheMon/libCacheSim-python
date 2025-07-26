@@ -72,7 +72,7 @@ def demo_unified_interface():
     }
 
     # Create Python hook-based LRU
-    python_cache = lcs.PythonHookCachePolicy(cache_size, "CustomLRU")
+    python_cache = lcs.PluginCache(cache_size, "CustomLRU")
     init_hook, hit_hook, miss_hook, eviction_hook, remove_hook = create_demo_lru_hooks()
     python_cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
     caches["Custom Python LRU"] = python_cache

@@ -173,7 +173,7 @@ class BeladySize(CacheBase):
     ): ...
 
 # Plugin cache
-class PythonHookCachePolicy(CacheBase):
+class PluginCache(CacheBase):
     def __init__(
         self,
         cache_size: int,

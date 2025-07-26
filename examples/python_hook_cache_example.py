@@ -3,7 +3,7 @@
 Example demonstrating how to create custom cache policies using Python hooks.
 
 This example shows how to implement LRU and FIFO cache policies using the
-PythonHookCachePolicy class, which allows users to define cache behavior using
+PluginCache class, which allows users to define cache behavior using
 pure Python functions instead of C/C++ plugins.
 """
 
@@ -72,7 +72,7 @@ class FIFOPolicy:
 
 def create_lru_cache(cache_size):
     """Create an LRU cache using Python hooks."""
-    cache = lcs.PythonHookCachePolicy(cache_size, "PythonLRU")
+    cache = lcs.PluginCache(cache_size, "PythonLRU")
 
     def init_hook(cache_size):
         return LRUPolicy(cache_size)
@@ -99,7 +99,7 @@ def create_lru_cache(cache_size):
 
 def create_fifo_cache(cache_size):
     """Create a FIFO cache using Python hooks."""
-    cache = lcs.PythonHookCachePolicy(cache_size, "PythonFIFO")
+    cache = lcs.PluginCache(cache_size, "PythonFIFO")
 
     def init_hook(cache_size):
         return FIFOPolicy(cache_size)

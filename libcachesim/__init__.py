@@ -10,6 +10,7 @@ from .libcachesim_python import (
     SamplerType,
     AnalysisParam,
     AnalysisOption,
+    CommonCacheParams,
     __doc__,
     __version__,
 )
@@ -38,7 +39,7 @@ from .cache import (
     Belady,
     BeladySize,
     # Plugin cache
-    PythonHookCachePolicy,
+    PluginCache,
 )
 
 from .trace_reader import TraceReader
@@ -56,6 +57,7 @@ __all__ = [
     "SamplerType",
     "AnalysisParam",
     "AnalysisOption",
+    "CommonCacheParams",
     # Cache base class
     "CacheBase",
     # Core cache algorithms
@@ -80,7 +82,7 @@ __all__ = [
     "Belady",
     "BeladySize",
     # Plugin cache
-    "PythonHookCachePolicy",
+    "PluginCache",
     # Readers and analyzers
     "TraceReader",
     "TraceAnalyzer",
