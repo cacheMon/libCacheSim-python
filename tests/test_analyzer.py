@@ -6,15 +6,7 @@ import pytest
 def test_analyzer_common():
     """
     Test the trace analyzer functionality.
-    
-    Note: This test is currently skipped due to a known segmentation fault issue
-    that occurs when analyzing traces with very few unique objects (< 200).
-    The issue appears to be in the C++ analyzer core, specifically in the 
-    post_processing phase where bounds checking may not be sufficient.
-    
-    TODO: Fix the underlying C++ segfault issue in the analyzer.
     """
-    pytest.skip("Skipping due to known segfault with small datasets. See issue documentation.")
     
     # Add debugging and error handling
     loader = DataLoader()
@@ -57,5 +49,3 @@ def test_analyzer_common():
     stat_file = "stat"
     if os.path.exists(stat_file):
         os.remove(stat_file)
-
-    analyzer.cleanup()
