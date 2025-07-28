@@ -25,13 +25,13 @@ class StandaloneLRU:
 def cache_init_hook(common_cache_params: CommonCacheParams):
     return StandaloneLRU()
 
-def cache_hit_hook(cache, obj_id):
-    cache.cache_hit(obj_id)
+def cache_hit_hook(cache, request: Request):
+    cache.cache_hit(request.obj_id)
 
 def cache_miss_hook(cache, request: Request):
     cache.cache_miss(request.obj_id, request.obj_size)
 
-def cache_eviction_hook(cache):
+def cache_eviction_hook(cache, request: Request):
     return cache.cache_eviction()
 
 def cache_remove_hook(cache, obj_id):
@@ -41,7 +41,7 @@ def cache_free_hook(cache):
     cache.cache_data.clear()
 
 plugin_lru_cache = PluginCache(
-    cache_size=1024*1024,
+    cache_size=1024,
     cache_init_hook=cache_init_hook,
     cache_hit_hook=cache_hit_hook,
     cache_miss_hook=cache_miss_hook,
@@ -50,7 +50,7 @@ plugin_lru_cache = PluginCache(
     cache_free_hook=cache_free_hook,
     cache_name="CustomizedLRU")
 
-ref_lru_cache = LRU(cache_size=1024*1024)
+ref_lru_cache = LRU(cache_size=1024)
 
 reader = SyntheticReader(
     num_of_req=100000,
