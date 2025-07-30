@@ -38,6 +38,18 @@ from .cache import (
     # Optimal algorithms
     Belady,
     BeladySize,
+    # Probabilistic algorithms
+    LRUProb,
+    FlashProb,
+    # Size-based algorithms
+    Size,
+    GDSF,
+    # Hyperbolic algorithms
+    Hyperbolic,
+    # Extra deps
+    ThreeLCache,
+    GLCache,
+    LRB,
     # Plugin cache
     PluginCache,
 )
@@ -81,6 +93,18 @@ __all__ = [
     # Optimal algorithms
     "Belady",
     "BeladySize",
+    # Probabilistic algorithms
+    "LRUProb",
+    "FlashProb",
+    # Size-based algorithms
+    "Size",
+    "GDSF",
+    # Hyperbolic algorithms
+    "Hyperbolic",
+    # Extra deps
+    "ThreeLCache",
+    "GLCache",
+    "LRB",
     # Plugin cache
     "PluginCache",
     # Readers and analyzers

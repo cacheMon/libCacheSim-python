@@ -24,7 +24,6 @@ class TraceReader(ReaderProtocol):
         trace_type: TraceType = TraceType.UNKNOWN_TRACE,
         reader_init_params: Optional[ReaderInitParam] = None,
     ):
-
         if isinstance(trace, Reader):
             self._reader = trace
             return
@@ -34,7 +33,7 @@ class TraceReader(ReaderProtocol):
 
         if not isinstance(reader_init_params, ReaderInitParam):
             raise TypeError("reader_init_params must be an instance of ReaderInitParam")
-            
+
         self._reader = Reader(trace, trace_type, reader_init_params)
 
     @property

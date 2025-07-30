@@ -28,7 +28,7 @@ def read_main_version():
         print(f"Error: {version_file} not found", file=sys.stderr)
         sys.exit(1)
 
-    with open(version_file, 'r') as f:
+    with open(version_file, "r") as f:
         version = f.read().strip()
 
     if not version:
@@ -36,6 +36,7 @@ def read_main_version():
         sys.exit(1)
 
     return version
+
 
 def update_pyproject_toml(version):
     """Update pyproject.toml with the new version."""
@@ -47,7 +48,7 @@ def update_pyproject_toml(version):
         return False
 
     # Read current pyproject.toml
-    with open(pyproject_toml_path, 'r') as f:
+    with open(pyproject_toml_path, "r") as f:
         pyproject_data = f.read()
 
     # Update the version line in pyproject.toml, make it can match any version in version.txt, like "0.3.1" or "dev"
@@ -60,10 +61,10 @@ def update_pyproject_toml(version):
         print(f"Python binding version already up to date: {version}")
         return False
     # replace the version line with the new version
-    pyproject_data = re.sub(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", f"version = \"{version}\"", pyproject_data)
+    pyproject_data = re.sub(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", f'version = "{version}"', pyproject_data)
 
     # Write back to file with proper formatting
-    with open(pyproject_toml_path, 'w') as f:
+    with open(pyproject_toml_path, "w") as f:
         f.write(pyproject_data)
 
     print(f"Updated Python version: {current_version} → {version}")

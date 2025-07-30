@@ -17,10 +17,7 @@ class DataLoader:
     DEFAULT_CACHE_DIR = Path.home() / ".cache/libcachesim_hub"
 
     def __init__(
-        self,
-        bucket_name: str = DEFAULT_BUCKET,
-        cache_dir: Optional[Union[str, Path]] = None,
-        use_auth: bool = False
+        self, bucket_name: str = DEFAULT_BUCKET, cache_dir: Optional[Union[str, Path]] = None, use_auth: bool = False
     ):
         self.bucket_name = bucket_name
         self.cache_dir = Path(cache_dir) if cache_dir else self.DEFAULT_CACHE_DIR
@@ -40,26 +37,25 @@ class DataLoader:
                 from botocore import UNSIGNED
 
                 self._s3_client = boto3.client(
-                    's3',
-                    config=None if self.use_auth else Config(signature_version=UNSIGNED)
+                    "s3", config=None if self.use_auth else Config(signature_version=UNSIGNED)
                 )
             except ImportError:
                 raise ImportError("Install boto3: pip install boto3")
         return self._s3_client
 
     def _cache_path(self, key: str) -> Path:
-        safe_name = hashlib.sha256(key.encode()).hexdigest()[:16] + "_" + quote(key, safe='')
+        safe_name = hashlib.sha256(key.encode()).hexdigest()[:16] + "_" + quote(key, safe="")
         return self.cache_dir / self.bucket_name / safe_name
 
     def _download(self, key: str, dest: Path) -> None:
-        temp = dest.with_suffix(dest.suffix + '.tmp')
+        temp = dest.with_suffix(dest.suffix + ".tmp")
         temp.parent.mkdir(parents=True, exist_ok=True)
 
         try:
             logger.info(f"Downloading s3://{self.bucket_name}/{key}")
             obj = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
-            with open(temp, 'wb') as f:
-                f.write(obj['Body'].read())
+            with open(temp, "wb") as f:
+                f.write(obj["Body"].read())
             shutil.move(str(temp), str(dest))
             logger.info(f"Saved to: {dest}")
         except Exception as e:
@@ -67,7 +63,7 @@ class DataLoader:
                 temp.unlink()
             raise RuntimeError(f"Download failed for s3://{self.bucket_name}/{key}: {e}")
 
-    def load(self, key: str, force: bool = False, mode: str = 'rb') -> Union[bytes, str]:
+    def load(self, key: str, force: bool = False, mode: str = "rb") -> Union[bytes, str]:
         path = self._cache_path(key)
         if not path.exists() or force:
             self._download(key, path)
@@ -93,15 +89,10 @@ class DataLoader:
     def list_cached_files(self) -> list[str]:
         if not self.cache_dir.exists():
             return []
-        return [
-            str(p) for p in self.cache_dir.rglob('*')
-            if p.is_file() and not p.name.endswith('.tmp')
-        ]
+        return [str(p) for p in self.cache_dir.rglob("*") if p.is_file() and not p.name.endswith(".tmp")]
 
     def get_cache_size(self) -> int:
-        return sum(
-            p.stat().st_size for p in self.cache_dir.rglob('*') if p.is_file()
-        )
+        return sum(p.stat().st_size for p in self.cache_dir.rglob("*") if p.is_file())
 
     def list_s3_objects(self, prefix: str = "", delimiter: str = "/") -> dict:
         """
@@ -116,14 +107,10 @@ class DataLoader:
                 - "folders": list of sub-prefixes (folders)
                 - "files": list of object keys (files)
         """
-        paginator = self.s3_client.get_paginator('list_objects_v2')
+        paginator = self.s3_client.get_paginator("list_objects_v2")
         result = {"folders": [], "files": []}
 
-        for page in paginator.paginate(
-            Bucket=self.bucket_name,
-            Prefix=prefix,
-            Delimiter=delimiter
-        ):
+        for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix, Delimiter=delimiter):
             # CommonPrefixes are like subdirectories
             result["folders"].extend(cp["Prefix"] for cp in page.get("CommonPrefixes", []))
             result["files"].extend(obj["Key"] for obj in page.get("Contents", []))

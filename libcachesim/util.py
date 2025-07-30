@@ -1,4 +1,5 @@
 """Wrapper misc functions"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -30,7 +31,9 @@ class Util:
         return convert_to_lcs(reader, ofilepath, output_txt, remove_size_change, lcs_ver)
 
     @staticmethod
-    def process_trace(cache: CacheBase, reader: ReaderProtocol, start_req: int = 0, max_req: int = -1) -> tuple[float, float]:
+    def process_trace(
+        cache: CacheBase, reader: ReaderProtocol, start_req: int = 0, max_req: int = -1
+    ) -> tuple[float, float]:
         """
         Process a trace with a cache.
 
@@ -44,7 +47,7 @@ class Util:
             tuple[float, float]: The object miss ratio and byte miss ratio.
         """
         # Check if reader is C++ reader
-        if not hasattr(reader, 'c_reader') or not reader.c_reader:
+        if not hasattr(reader, "c_reader") or not reader.c_reader:
             raise ValueError("Reader must be a C++ reader")
 
         return c_process_trace(cache._cache, reader._reader, start_req, max_req)

@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Protocol, Callable, Optional
+from typing import Callable, Optional
 from .libcachesim_python import (
     CommonCacheParams,
     Request,
@@ -149,9 +149,11 @@ def _create_common_params(
     )
 
 
+# ------------------------------------------------------------------------------------------------
 # Core cache algorithms
+# ------------------------------------------------------------------------------------------------
 class LRU(CacheBase):
-    """Least Recently Used cache"""
+    """Least Recently Used cache (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -162,7 +164,7 @@ class LRU(CacheBase):
 
 
 class FIFO(CacheBase):
-    """First In First Out cache"""
+    """First In First Out cache (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -173,7 +175,7 @@ class FIFO(CacheBase):
 
 
 class LFU(CacheBase):
-    """Least Frequently Used cache"""
+    """Least Frequently Used cache (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -184,7 +186,7 @@ class LFU(CacheBase):
 
 
 class ARC(CacheBase):
-    """Adaptive Replacement Cache"""
+    """Adaptive Replacement Cache (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -195,18 +197,32 @@ class ARC(CacheBase):
 
 
 class Clock(CacheBase):
-    """Clock replacement algorithm"""
+    """Clock replacement algorithm
+
+    Special parameters:
+    init_freq: initial frequency of the object (default: 0)
+    n_bit_counter: number of bits for the counter (default: 1)
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        init_freq: int = 0,
+        n_bit_counter: int = 1,
     ):
+        cache_specific_params = f"init-freq={init_freq}, n-bit-counter={n_bit_counter}"
         super().__init__(
-            _cache=Clock_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Clock_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
 class Random(CacheBase):
-    """Random replacement cache"""
+    """Random replacement cache (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -218,18 +234,34 @@ class Random(CacheBase):
 
 # Advanced algorithms
 class S3FIFO(CacheBase):
-    """S3-FIFO cache algorithm"""
+    """S3-FIFO cache algorithm
+
+    Special parameters:
+    small_size_ratio: ratio of small cache size to total cache size (default: 0.1)
+    ghost_size_ratio: ratio of ghost cache size to total cache size (default: 0.9)
+    move_to_main_threshold: threshold for moving objects from ghost to main cache (default: 2)
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        small_size_ratio: float = 0.1,
+        ghost_size_ratio: float = 0.9,
+        move_to_main_threshold: int = 2,
     ):
+        cache_specific_params = f"small-size-ratio={small_size_ratio}, ghost-size-ratio={ghost_size_ratio}, move-to-main-threshold={move_to_main_threshold}"
         super().__init__(
-            _cache=S3FIFO_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=S3FIFO_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
 class Sieve(CacheBase):
-    """Sieve cache algorithm"""
+    """Sieve cache algorithm (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -240,7 +272,7 @@ class Sieve(CacheBase):
 
 
 class LIRS(CacheBase):
-    """Low Inter-reference Recency Set"""
+    """Low Inter-reference Recency Set (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -251,18 +283,32 @@ class LIRS(CacheBase):
 
 
 class TwoQ(CacheBase):
-    """2Q replacement algorithm"""
+    """2Q replacement algorithm
+
+    Special parameters:
+    a_in_size_ratio: ratio of Ain queue size to total cache size (default: 0.25)
+    a_out_size_ratio: ratio of Aout queue size to total cache size (default: 0.5)
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        a_in_size_ratio: float = 0.25,
+        a_out_size_ratio: float = 0.5,
     ):
+        cache_specific_params = f"Ain-size-ratio={a_in_size_ratio}, Aout-size-ratio={a_out_size_ratio}"
         super().__init__(
-            _cache=TwoQ_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=TwoQ_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
 class SLRU(CacheBase):
-    """Segmented LRU"""
+    """Segmented LRU (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -273,29 +319,57 @@ class SLRU(CacheBase):
 
 
 class WTinyLFU(CacheBase):
-    """Window TinyLFU"""
+    """Window TinyLFU
+
+    Special parameters:
+    main_cache: the type of the main cache (default: "SLRU")
+    window_size: ratio of the window size to the main cache size (default: 0.01)
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        main_cache: str = "SLRU",
+        window_size: float = 0.01,
     ):
+        cache_specific_params = f"main-cache={main_cache}, window-size={window_size}"
         super().__init__(
-            _cache=WTinyLFU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=WTinyLFU_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
 class LeCaR(CacheBase):
-    """Learning Cache Replacement"""
+    """Learning Cache Replacement
+
+    Special parameters:
+    update_weight (bool): whether to update the weight (default: True)
+    lru_weight (float): the initial weight (probability) of the LRU (default: 0.5), 1 - lru_weight = lfu_weight, i.e, the probability of the LRU being selected
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        update_weight: bool = True,
+        lru_weight: float = 0.5,
     ):
+        cache_specific_params = f"update-weight={update_weight}, lru-weight={lru_weight}"
         super().__init__(
-            _cache=LeCaR_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LeCaR_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
 class LFUDA(CacheBase):
-    """LFU with Dynamic Aging"""
+    """LFU with Dynamic Aging (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -306,18 +380,32 @@ class LFUDA(CacheBase):
 
 
 class ClockPro(CacheBase):
-    """Clock-Pro replacement algorithm"""
+    """Clock-Pro replacement algorithm
+
+    Special parameters:
+    init_req: initial reference count (default: 0)
+    init_ratio_cold: initial ratio of cold pages (default: 1)
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        init_req: int = 0,
+        init_ratio_cold: float = 0.5,
     ):
+        cache_specific_params = f"init-req={init_req}, init-ratio-cold={init_ratio_cold}"
         super().__init__(
-            _cache=ClockPro_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=ClockPro_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
 class Cacheus(CacheBase):
-    """Cacheus algorithm"""
+    """Cacheus algorithm (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -329,7 +417,7 @@ class Cacheus(CacheBase):
 
 # Optimal algorithms
 class Belady(CacheBase):
-    """Belady's optimal algorithm"""
+    """Belady's optimal algorithm (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
@@ -340,13 +428,198 @@ class Belady(CacheBase):
 
 
 class BeladySize(CacheBase):
-    """Belady's optimal algorithm with size consideration"""
+    """Belady's optimal algorithm with size consideration
+
+    Special parameters:
+    n_samples: number of samples for the size consideration (default: 128)
+    """
+
+    def __init__(
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        n_samples: int = 128,
+    ):
+        cache_specific_params = f"n-samples={n_samples}"
+        super().__init__(
+            _cache=BeladySize_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
+        )
+
+
+class LRUProb(CacheBase):
+    """LRU with Probabilistic Replacement (no special parameters)"""
 
     def __init__(
         self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
     ):
         super().__init__(
-            _cache=BeladySize_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LRU_Prob_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+        )
+
+
+class FlashProb(CacheBase):
+    """FlashProb replacement algorithm
+
+    Special parameters:
+    ram_size_ratio: ratio of the RAM size to the total cache size (default: 0.05)
+    disk_admit_prob: probability of admitting a disk page to the RAM (default: 0.2)
+    ram_cache: the type of the RAM cache (default: "LRU")
+    disk_cache: the type of the disk cache (default: "FIFO")
+    """
+
+    def __init__(
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        ram_size_ratio: float = 0.05,
+        disk_admit_prob: float = 0.2,
+        ram_cache: str = "LRU",
+        disk_cache: str = "FIFO",
+    ):
+        cache_specific_params = f"ram-size-ratio={ram_size_ratio}, disk-admit-prob={disk_admit_prob}, ram-cache={ram_cache}, disk-cache={disk_cache}"
+        super().__init__(
+            _cache=flashProb_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
+        )
+
+
+class Size(CacheBase):
+    """Size-based replacement algorithm (no special parameters)"""
+
+    def __init__(
+        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+    ):
+        super().__init__(
+            _cache=Size_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+        )
+
+
+class GDSF(CacheBase):
+    """GDSF replacement algorithm (no special parameters)"""
+
+    def __init__(
+        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+    ):
+        super().__init__(
+            _cache=GDSF_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+        )
+
+
+class Hyperbolic(CacheBase):
+    """Hyperbolic replacement algorithm (no special parameters)"""
+
+    def __init__(
+        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+    ):
+        super().__init__(
+            _cache=Hyperbolic_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+        )
+
+
+# Extra deps
+class ThreeLCache(CacheBase):
+    """Three-Level Cache
+
+    Special parameters:
+    objective: the objective of the ThreeLCache (default: "byte-miss-ratio")
+    """
+
+    def __init__(
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        objective: str = "byte-miss-ratio",
+    ):
+        # Try to import ThreeLCache_init
+        try:
+            from .libcachesim_python import ThreeLCache_init
+        except ImportError:
+            raise ImportError("ThreeLCache is not installed. Please install it with `pip install libcachesim[all]`")
+
+        cache_specific_params = f"objective={objective}"
+        super().__init__(
+            _cache=ThreeLCache_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
+        )
+
+
+class GLCache(CacheBase):
+    """GLCache replacement algorithm
+
+    Special parameters:
+    segment-size: the size of the segment (default: 100)
+    n-merge: the number of merges (default: 2)
+    type: the type of the GLCache (default: "learned")
+    rank-intvl: the interval for ranking (default: 0.02)
+    merge-consecutive-segs: whether to merge consecutive segments (default: True)
+    train-source-y: the source of the training data (default: "online")
+    retrain-intvl: the interval for retraining (default: 86400)
+    """
+
+    def __init__(
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        segment_size: int = 100,
+        n_merge: int = 2,
+        type: str = "learned",
+        rank_intvl: float = 0.02,
+        merge_consecutive_segs: bool = True,
+        train_source_y: str = "online",
+        retrain_intvl: int = 86400,
+    ):
+        # Try to import GLCache_init
+        try:
+            from .libcachesim_python import GLCache_init
+        except ImportError:
+            raise ImportError("GLCache is not installed. Please install it with `pip install libcachesim[all]`")
+
+        cache_specific_params = f"segment-size={segment_size}, n-merge={n_merge}, type={type}, rank-intvl={rank_intvl}, merge-consecutive-segs={merge_consecutive_segs}, train-source-y={train_source_y}, retrain-intvl={retrain_intvl}"
+        super().__init__(
+            _cache=GLCache_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
+        )
+
+
+class LRB(CacheBase):
+    """LRB replacement algorithm
+
+    Special parameters:
+    objective: the objective of the LRB (default: "byte-miss-ratio")
+    """
+
+    def __init__(
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        objective: str = "byte-miss-ratio",
+    ):
+        # Try to import LRB_init
+        try:
+            from .libcachesim_python import LRB_init
+        except ImportError:
+            raise ImportError("LRB is not installed. Please install it with `pip install libcachesim[all]`")
+
+        cache_specific_params = f"objective={objective}"
+        super().__init__(
+            _cache=LRB_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 

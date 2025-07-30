@@ -180,7 +180,7 @@ void export_reader(py::module& m) {
       .def_property(
           "feature_fields",
           [](const reader_init_param_t& self) {
-            return py::array_t<int>({self.n_feature_fields},
+            return py::array_t<int>(self.n_feature_fields,
                                     self.feature_fields);  // copy to python
           },
           [](reader_init_param_t& self, py::array_t<int> arr) {

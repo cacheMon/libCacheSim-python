@@ -231,3 +231,4 @@ sftp-config.json
 # Custom files
 CMakeFiles/*
 *.pyc
+!scripts/smart_build.py

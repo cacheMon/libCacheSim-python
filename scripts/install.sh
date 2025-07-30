@@ -3,8 +3,9 @@ git submodule update --init --recursive
 # Build the main libCacheSim C++ library first
 echo "Building main libCacheSim library..."
 pushd src/libCacheSim
+bash scripts/install_dependency.sh
 rm -rf build
-cmake -G Ninja -B build # -DENABLE_3L_CACHE=ON
+cmake -G Ninja -B build
 ninja -C build
 popd
 
