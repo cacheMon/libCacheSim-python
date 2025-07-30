@@ -219,7 +219,6 @@ def create_zipf_requests(
     start_obj_id: int = 0,
     seed: int | None = None,
 ) -> Iterator[Request]: ...
-
 def create_uniform_requests(
     num_objects: int,
     num_requests: int,

@@ -1,4 +1,5 @@
 """Wrapper of Analyzer"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -12,10 +13,13 @@ from .libcachesim_python import (
     AnalysisParam,
 )
 
+
 # Import ReaderException
 class ReaderException(Exception):
     """Exception raised when reader is not compatible"""
+
     pass
+
 
 class TraceAnalyzer:
     _analyzer: Analyzer
@@ -36,7 +40,7 @@ class TraceAnalyzer:
             analysis_param: Analysis parameters
             analysis_option: Analysis options
         """
-        if not hasattr(reader, 'c_reader') or not reader.c_reader:
+        if not hasattr(reader, "c_reader") or not reader.c_reader:
             raise ReaderException("Only C/C++ reader is supported")
 
         if analysis_param is None:

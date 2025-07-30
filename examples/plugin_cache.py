@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from libcachesim import PluginCache, CommonCacheParams, Request, SyntheticReader, LRU
 
+
 class StandaloneLRU:
     def __init__(self):
         self.cache_data = OrderedDict()
@@ -25,20 +26,26 @@ class StandaloneLRU:
 def cache_init_hook(common_cache_params: CommonCacheParams):
     return StandaloneLRU()
 
+
 def cache_hit_hook(cache, request: Request):
     cache.cache_hit(request.obj_id)
+
 
 def cache_miss_hook(cache, request: Request):
     cache.cache_miss(request.obj_id, request.obj_size)
 
+
 def cache_eviction_hook(cache, request: Request):
     return cache.cache_eviction()
+
 
 def cache_remove_hook(cache, obj_id):
     cache.cache_remove(obj_id)
 
+
 def cache_free_hook(cache):
     cache.cache_data.clear()
+
 
 plugin_lru_cache = PluginCache(
     cache_size=1024,
@@ -48,7 +55,8 @@ plugin_lru_cache = PluginCache(
     cache_eviction_hook=cache_eviction_hook,
     cache_remove_hook=cache_remove_hook,
     cache_free_hook=cache_free_hook,
-    cache_name="CustomizedLRU")
+    cache_name="CustomizedLRU",
+)
 
 ref_lru_cache = LRU(cache_size=1024)
 
@@ -67,6 +75,3 @@ for req in reader:
     assert plugin_hit == ref_hit, f"Cache hit mismatch: {plugin_hit} != {ref_hit}"
 
 print("All requests processed successfully. Plugin cache matches reference LRU cache.")
-
-
-    
