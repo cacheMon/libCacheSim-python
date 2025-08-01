@@ -3,6 +3,8 @@ project(libCacheSim-python)
 set(DESCRIPTION "The libCacheSim Python Package")
 set(PROJECT_WEB "https://docs.libcachesim.com/python")
 
+set(CXX_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
+
 # Options from the libCacheSim library
 option(ENABLE_GLCACHE "enable group-learned cache" ON)
 option(ENABLE_LRB "enable LRB" ON)
@@ -38,8 +40,25 @@ endif()
 # Build libCacheSim first
 set(LIBCACHESIM_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
 message(STATUS "Building libCacheSim...")
+
+# Set compiler environment variables if available
+set(CMAKE_ARGS "")
+if(DEFINED ENV{CC})
+    list(APPEND CMAKE_ARGS "-DCMAKE_C_COMPILER=$ENV{CC}")
+endif()
+if(DEFINED ENV{CXX})
+    list(APPEND CMAKE_ARGS "-DCMAKE_CXX_COMPILER=$ENV{CXX}")
+endif()
+
+# Add compiler flags to disable specific checks
+list(APPEND CMAKE_ARGS "-DCMAKE_C_FLAGS=-fPIC -fno-strict-overflow -fno-strict-aliasing")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS=-fPIC -fno-strict-overflow -fno-strict-aliasing ${CXX_FLAGS}")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=-g ${CXX_FLAGS}")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${CXX_FLAGS}")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${CXX_FLAGS}")
+
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja -DENABLE_LRB=${ENABLE_LRB} -DENABLE_GLCACHE=${ENABLE_GLCACHE} -DENABLE_3L_CACHE=${ENABLE_3L_CACHE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja -DENABLE_LRB=${ENABLE_LRB} -DENABLE_GLCACHE=${ENABLE_GLCACHE} -DENABLE_3L_CACHE=${ENABLE_3L_CACHE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ${CMAKE_ARGS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     RESULT_VARIABLE CMAKE_CONFIG_RESULT
 )
@@ -75,10 +94,10 @@ else()
     message(FATAL_ERROR "export_vars.cmake not found at ${EXPORT_FILE}. Please build the main project first (e.g. cd .. && cmake -G Ninja -B build)")
 endif()
 
-# Force enable -fPIC
+# Force enable -fPIC and disable specific checks
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing ${CXX_FLAGS}")
 
 project(libCacheSim-python VERSION "${LIBCACHESIM_VERSION}")
 
