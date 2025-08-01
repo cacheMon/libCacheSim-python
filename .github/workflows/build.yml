@@ -33,7 +33,7 @@ jobs:
       - name: Build and test with uv
         run: |
           uv venv --python ${{ matrix.python-version }}
-          uv pip install -e .[dev]
+          CMAKE_ARGS="-DENABLE_GLCACHE=OFF -DENABLE_LRB=OFF -DENABLE_3L_CACHE=OFF" uv pip install -e .[dev] -vvv
           uv run python -c "import libcachesim; print('✓ Import successful for Python ${{ matrix.python-version }} on ${{ matrix.os }}')"
 
       - name: Run tests
