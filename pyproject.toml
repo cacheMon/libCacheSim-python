@@ -86,7 +86,7 @@ environment = { LCS_BUILD_DIR = "{project}/src/libCacheSim/build", MACOSX_DEPLOY
 test-command = "python -c 'import libcachesim; print(\"Import successful\")'"
 
 [tool.cibuildwheel.linux]
-before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y ninja-build cmake libzstd-devel glib2-devel"
+before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y ninja-build cmake libzstd-devel glib2-devel xgboost-devel lightgbm-devel"
 before-build = "pip install pybind11 && git submodule update --init --recursive && python {project}/scripts/smart_build.py"
 
 [tool.cibuildwheel.macos]

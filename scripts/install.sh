@@ -1,13 +1,7 @@
 git submodule update --init --recursive
+# Sync submodules
+git submodule update --recursive --remote
 
-# Build the main libCacheSim C++ library first
-echo "Building main libCacheSim library..."
-pushd src/libCacheSim
-bash scripts/install_dependency.sh
-rm -rf build
-cmake -G Ninja -B build
-ninja -C build
-popd
 
 # Now build and install the Python binding
 echo "Building Python binding..."

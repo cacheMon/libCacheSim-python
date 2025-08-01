@@ -1,9 +1,20 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 project(libCacheSim-python)
 set(DESCRIPTION "The libCacheSim Python Package")
-set(PROJECT_WEB "http://cachemon.github.io/libCacheSim-python")
+set(PROJECT_WEB "https://docs.libcachesim.com/python")
 
-# Auto-initialize submodules if not already done
+# Options from the libCacheSim library
+option(ENABLE_GLCACHE "enable group-learned cache" ON)
+option(ENABLE_LRB "enable LRB" ON)
+option(ENABLE_3L_CACHE "enable 3LCache" ON)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug" FORCE)
+endif()
+
+message(STATUS "CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}")
+
+# 1. Auto-initialize submodules if not already done
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     # Check if submodule is initialized
@@ -18,7 +29,7 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
 endif()
 
-# Auto-build libCacheSim if needed
+# 2. Auto-build libCacheSim if needed
 set(LIBCACHESIM_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim")
 if(NOT EXISTS "${LIBCACHESIM_SOURCE_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "libCacheSim submodule not found. Please run 'git submodule update --init --recursive'")
@@ -26,25 +37,23 @@ endif()
 
 # Build libCacheSim first
 set(LIBCACHESIM_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
-if(NOT EXISTS "${LIBCACHESIM_BUILD_DIR}/export_vars.cmake")
-    message(STATUS "Building libCacheSim...")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        RESULT_VARIABLE CMAKE_CONFIG_RESULT
-    )
-    if(NOT CMAKE_CONFIG_RESULT EQUAL "0")
-        message(FATAL_ERROR "Failed to configure libCacheSim")
-    endif()
+message(STATUS "Building libCacheSim...")
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja -DENABLE_LRB=${ENABLE_LRB} -DENABLE_GLCACHE=${ENABLE_GLCACHE} -DENABLE_3L_CACHE=${ENABLE_3L_CACHE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE CMAKE_CONFIG_RESULT
+)
+if(NOT CMAKE_CONFIG_RESULT EQUAL "0")
+    message(FATAL_ERROR "Failed to configure libCacheSim")
+endif()
     
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} --build ${LIBCACHESIM_BUILD_DIR}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        RESULT_VARIABLE CMAKE_BUILD_RESULT
-    )
-    if(NOT CMAKE_BUILD_RESULT EQUAL "0")
-        message(FATAL_ERROR "Failed to build libCacheSim")
-    endif()
+execute_process(
+    COMMAND ${CMAKE_COMMAND} --build ${LIBCACHESIM_BUILD_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE CMAKE_BUILD_RESULT
+)
+if(NOT CMAKE_BUILD_RESULT EQUAL "0")
+    message(FATAL_ERROR "Failed to build libCacheSim")
 endif()
 
 # Note(haocheng): now we still utilize the exported cache from 
@@ -99,6 +108,34 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find python and pybind11
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
+
+set(optional_dependency_libs "")
+
+# Find optional deps
+if(ENABLE_GLCACHE)
+    find_package(xgboost REQUIRED)
+    include_directories(${XGBOOST_INCLUDE_DIR})
+    list(APPEND optional_dependency_libs xgboost::xgboost)
+    add_compile_definitions(ENABLE_GLCACHE=1)
+    message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
+endif()
+
+foreach(FEATURE ENABLE_LRB ENABLE_3L_CACHE)
+    if(${FEATURE})
+        find_path(LIGHTGBM_PATH LightGBM)
+        if(NOT LIGHTGBM_PATH)
+            message(FATAL_ERROR "LIGHTGBM_PATH not found")
+        endif()
+        # include_directories(${LIGHTGBM_PATH})
+
+        find_library(LIGHTGBM_LIB _lightgbm)
+        if(NOT LIGHTGBM_LIB)
+            message(FATAL_ERROR "LIGHTGBM_LIB not found")
+        endif()
+        list(APPEND optional_dependency_libs ${LIGHTGBM_LIB})
+        add_compile_definitions(${FEATURE}=1)
+    endif()
+endforeach()
 
 # Include directories for dependencies
 include_directories(${GLib_INCLUDE_DIRS})
@@ -160,6 +197,7 @@ target_link_libraries(libcachesim_python PRIVATE
     pybind11::module
     ${GLib_LIBRARIES}
     ${ZSTD_LIBRARIES}
+    ${optional_dependency_libs}
 )
 
 # Add platform-specific link options and libraries
