@@ -3,7 +3,14 @@ project(libCacheSim-python)
 set(DESCRIPTION "The libCacheSim Python Package")
 set(PROJECT_WEB "https://docs.libcachesim.com/python")
 
-set(CXX_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
+# Set compiler-specific flags
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CXX_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CXX_FLAGS "-Wno-array-bounds")
+else()
+    set(CXX_FLAGS "")
+endif()
 
 # Options from the libCacheSim library
 option(ENABLE_GLCACHE "enable group-learned cache" ON)
@@ -43,19 +50,23 @@ message(STATUS "Building libCacheSim...")
 
 # Set compiler environment variables if available
 set(CMAKE_ARGS "")
-if(DEFINED ENV{CC})
-    list(APPEND CMAKE_ARGS "-DCMAKE_C_COMPILER=$ENV{CC}")
-endif()
-if(DEFINED ENV{CXX})
-    list(APPEND CMAKE_ARGS "-DCMAKE_CXX_COMPILER=$ENV{CXX}")
-endif()
 
 # Add compiler flags to disable specific checks
 list(APPEND CMAKE_ARGS "-DCMAKE_C_FLAGS=-fPIC -fno-strict-overflow -fno-strict-aliasing")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS=-fPIC -fno-strict-overflow -fno-strict-aliasing ${CXX_FLAGS}")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=-g ${CXX_FLAGS}")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${CXX_FLAGS}")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${CXX_FLAGS}")
+
+# Set compiler-specific CXX flags for subproject
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(SUB_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-cast-user-defined -Wno-array-bounds")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(SUB_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-array-bounds")
+else()
+    set(SUB_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
+endif()
+
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${SUB_CXX_FLAGS}")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=-g ${SUB_CXX_FLAGS}")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${SUB_CXX_FLAGS}")
+list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${SUB_CXX_FLAGS}")
 
 execute_process(
     COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja -DENABLE_LRB=${ENABLE_LRB} -DENABLE_GLCACHE=${ENABLE_GLCACHE} -DENABLE_3L_CACHE=${ENABLE_3L_CACHE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ${CMAKE_ARGS}
@@ -97,7 +108,15 @@ endif()
 # Force enable -fPIC and disable specific checks
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing ${CXX_FLAGS}")
+
+# Set compiler-specific flags for current project
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-cast-user-defined -Wno-array-bounds")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-array-bounds")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing")
+endif()
 
 project(libCacheSim-python VERSION "${LIBCACHESIM_VERSION}")
 
