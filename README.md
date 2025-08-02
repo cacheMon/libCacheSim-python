@@ -94,7 +94,7 @@ You need to implement these callback functions:
 <details>
 <summary>An example for LRU</summary>
 
-```
+```python
 from collections import OrderedDict
 from libcachesim import PluginCache, CommonCacheParams, Request, SyntheticReader, LRU
 
