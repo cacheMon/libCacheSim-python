@@ -85,11 +85,12 @@ class SyntheticReader(ReaderProtocol):
     def get_num_of_req(self) -> int:
         return self.num_of_req
 
-    def read_one_req(self, req: Request) -> Request:
+    def read_one_req(self) -> Request:
         """Read one request and fill Request object"""
+        req = Request()
         if self.current_pos >= self.num_of_req:
             req.valid = False
-            return req
+            return req # return invalid request
 
         obj_id = self.obj_ids[self.current_pos]
         req.obj_id = obj_id
@@ -194,8 +195,7 @@ class SyntheticReader(ReaderProtocol):
         if self.current_pos >= self.num_of_req:
             raise StopIteration
 
-        req = Request()
-        return self.read_one_req(req)
+        return self.read_one_req()
 
     def __getitem__(self, index: int) -> Request:
         """Support index access"""

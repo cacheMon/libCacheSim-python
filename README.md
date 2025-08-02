@@ -1,14 +1,9 @@
 # libCacheSim Python Binding
 
 [![Build](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml)
-[![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml)
+[![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)](docs.libcachesim.com/python)
 
 Python bindings for [libCacheSim](https://github.com/1a1a11a/libCacheSim), a high-performance cache simulator and analysis library.
-
-## 📚 Documentation
-
-- **[English Documentation](https://cacheMon.github.io/libCacheSim-python/en/)** - Complete API reference, tutorials, and examples
-- **[中文文档](https://cacheMon.github.io/libCacheSim-python/zh/)** - 完整的API参考、教程和示例
 
 ## Installation
 
@@ -32,16 +27,6 @@ Run all tests to ensure the package works.
 python -m pytest tests/
 ```
 
-## 🚀 Features
-
-- **High-Performance Cache Simulation**: Built on the proven libCacheSim C++ library
-- **Multiple Cache Algorithms**: LRU, LFU, FIFO, ARC, S3FIFO, Sieve, TinyLFU, and more
-- **Trace Processing**: Support for various trace formats (CSV, binary, Oracle, etc.)
-- **Synthetic Workload Generation**: Zipf, uniform, and custom distributions
-- **Trace Analysis**: Comprehensive workload analysis and visualization tools
-- **Custom Cache Policies**: Implement new algorithms using Python hooks
-- **Multi-language Documentation**: English and Chinese documentation with examples
-
 ## Quick Start
 
 ### Basic Usage
@@ -63,36 +48,27 @@ print(cache.get(req))  # True (second access)
 
 ### Trace Processing
 
-To simulate with traces, we need to read the request of traces correctly. `open_trace` is an unified interface for trace reading, which accepet three parameters:
-
-- `trace_path`: trace path, can be relative or absolutive path.
-- `type` (optional): if not given, we will automatically infer the type of trace according to the suffix of the trace file.
-- `params` (optional): if not given, default params are applied.
-
 ```python
 import libcachesim as lcs
 
-# Open trace and process efficiently
-reader = lcs.open_trace(
-    trace_path = "./data/cloudPhysicsIO.oracleGeneral.bin",
-    type = lcs.TraceType.ORACLE_GENERAL_TRACE,
-    params = lcs.ReaderInitParam(ignore_obj_size=True)
-)
+# Step 1: Get one trace from S3 bucket
+URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
+dl = lcs.DataLoader()
+dl.load(URI)
+
+# Step 2: Open trace and process efficiently
+reader = lcs.TraceReader(dl.get_cache_path(URI))
+
+# Step 3: Initialize cache
 cache = lcs.S3FIFO(cache_size=1024*1024)
 
-# Process entire trace efficiently (C++ backend)
+# Step 4: Process entire trace efficiently (C++ backend)
 obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
 print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
-
-cache = lcs.S3FIFO(cache_size=1024*1024)
-# Process with limits and time ranges
-obj_miss_ratio, byte_miss_ratio = cache.process_trace(
-    reader,
-    start_req=0,
-    max_req=1000
-)
-print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
 ```
+
+> [!NOTE]
+> We DO NOT ignore the object size by defaults, you can add `reader_init_params = lcs.ReaderInitParam(ignore_obj_size=False)` to the initialization of `TraceReader` if needed.
 
 ## Custom Cache Policies
 
@@ -100,239 +76,144 @@ Implement custom cache replacement algorithms using pure Python functions - **no
 
 ### Python Hook Cache Overview
 
-The `PluginCache` allows you to define custom caching behavior through Python callback functions. This is perfect for:
-- Prototyping new cache algorithms
-- Educational purposes and learning
-- Research and experimentation
-- Custom business logic implementation
+The `PluginCache` allows you to define custom caching behavior through Python callback functions without without any C/C++ compilation. 
 
 ### Hook Functions
 
 You need to implement these callback functions:
 
-- **`init_hook(cache_size: int) -> Any`**: Initialize your data structure
-- **`hit_hook(data: Any, obj_id: int, obj_size: int) -> None`**: Handle cache hits
-- **`miss_hook(data: Any, obj_id: int, obj_size: int) -> None`**: Handle cache misses
-- **`eviction_hook(data: Any, obj_id: int, obj_size: int) -> int`**: Return object ID to evict
-- **`remove_hook(data: Any, obj_id: int) -> None`**: Clean up when object removed
-- **`free_hook(data: Any) -> None`**: [Optional] Final cleanup
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `init_hook` | `((common_cache_params: CommonCacheParams)) -> Any` | Initialize your data structure |
+| `hit_hook` | `(data: Any, request: Request) -> None` | Handle cache hits |
+| `miss_hook` | `(data: Any, request: Request) -> None` | Handle cache misses |
+| `eviction_hook` | `(data: Any, request: Request) -> int` | Return object ID to evict |
+| `remove_hook` | `(data: Any, obj_id: int) -> None` | Clean up when object removed |
+| `free_hook` | `(data: Any) -> None` | [Optional] Final cleanup |
 
-### Example: Custom LRU Implementation
+<details>
+<summary>An example for LRU</summary>
 
-```python
-import libcachesim as lcs
+```
 from collections import OrderedDict
+from libcachesim import PluginCache, CommonCacheParams, Request, SyntheticReader, LRU
 
-# Create a Python hook-based cache
-cache = lcs.PluginCache(cache_size=1024*1024, cache_name="MyLRU")
 
-# Define LRU policy hooks
-def init_hook(cache_size):
-    return OrderedDict()  # Track access order
+class StandaloneLRU:
+    def __init__(self):
+        self.cache_data = OrderedDict()
 
-def hit_hook(lru_dict, obj_id, obj_size):
-    lru_dict.move_to_end(obj_id)  # Move to most recent
+    def cache_hit(self, obj_id):
+        if obj_id in self.cache_data:
+            obj_size = self.cache_data.pop(obj_id)
+            self.cache_data[obj_id] = obj_size
 
-def miss_hook(lru_dict, obj_id, obj_size):
-    lru_dict[obj_id] = True  # Add to end
+    def cache_miss(self, obj_id, obj_size):
+        self.cache_data[obj_id] = obj_size
 
-def eviction_hook(lru_dict, obj_id, obj_size):
-    return next(iter(lru_dict))  # Return least recent
+    def cache_eviction(self):
+        evicted_id, _ = self.cache_data.popitem(last=False)
+        return evicted_id
 
-def remove_hook(lru_dict, obj_id):
-    lru_dict.pop(obj_id, None)
+    def cache_remove(self, obj_id):
+        if obj_id in self.cache_data:
+            del self.cache_data[obj_id]
 
-# Set the hooks
-cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
-# Use it like any other cache
-req = lcs.Request()
-req.obj_id = 1
-req.obj_size = 100
-hit = cache.get(req)
-print(f"Cache hit: {hit}")  # Should be False (miss)
+def cache_init_hook(common_cache_params: CommonCacheParams):
+    return StandaloneLRU()
+
+
+def cache_hit_hook(cache, request: Request):
+    cache.cache_hit(request.obj_id)
+
+
+def cache_miss_hook(cache, request: Request):
+    cache.cache_miss(request.obj_id, request.obj_size)
+
+
+def cache_eviction_hook(cache, request: Request):
+    return cache.cache_eviction()
+
+
+def cache_remove_hook(cache, obj_id):
+    cache.cache_remove(obj_id)
+
+
+def cache_free_hook(cache):
+    cache.cache_data.clear()
+
+
+plugin_lru_cache = PluginCache(
+    cache_size=1024,
+    cache_init_hook=cache_init_hook,
+    cache_hit_hook=cache_hit_hook,
+    cache_miss_hook=cache_miss_hook,
+    cache_eviction_hook=cache_eviction_hook,
+    cache_remove_hook=cache_remove_hook,
+    cache_free_hook=cache_free_hook,
+    cache_name="CustomizedLRU",
+)
 ```
+</details>
 
-### Example: Custom FIFO Implementation
 
-```python
-import libcachesim as lcs
-from collections import deque
-from contextlib import suppress
-
-cache = lcs.PluginCache(cache_size=1024, cache_name="CustomFIFO")
-
-def init_hook(cache_size):
-    return deque()  # Use deque for FIFO order
-
-def hit_hook(fifo_queue, obj_id, obj_size):
-    pass  # FIFO doesn't reorder on hit
-
-def miss_hook(fifo_queue, obj_id, obj_size):
-    fifo_queue.append(obj_id)  # Add to end of queue
-
-def eviction_hook(fifo_queue, obj_id, obj_size):
-    return fifo_queue[0]  # Return first item (oldest)
-
-def remove_hook(fifo_queue, obj_id):
-    with suppress(ValueError):
-        fifo_queue.remove(obj_id)
-
-# Set the hooks and test
-cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
-
-req = lcs.Request(obj_id=1, obj_size=100)
-hit = cache.get(req)
-print(f"Cache hit: {hit}")  # Should be False (miss)
-```
-
-## Available Algorithms
-
-### Built-in Cache Algorithms
-
-#### Basic Algorithms
-- **FIFO**: First-In-First-Out
-- **LRU**: Least Recently Used
-- **LFU**: Least Frequently Used
-- **LFUDA**: LFU with Dynamic Aging
-- **Clock**: Clock/Second-chance algorithm
-
-#### Advanced Algorithms
-- **QDLP**: Queue Demotion with Lazy Promotion
-- **S3FIFO**: Simple, Fast, Fair FIFO (recommended for most workloads)
-- **Sieve**: High-performance eviction algorithm
-- **ARC**: Adaptive Replacement Cache
-- **TwoQ**: Two-Queue algorithm
-- **SLRU**: Segmented LRU
-- **TinyLFU**: TinyLFU with window
-- **WTinyLFU**: Windowed TinyLFU
-
-#### Research/ML Algorithms
-- **LeCaR**: Learning Cache Replacement (adaptive)
-- **Cacheus**: Cache replacement policy
-- **LRB**: Learning-based cache (if enabled)
-- **GLCache**: Machine learning-based cache
-- **ThreeLCache**: Three-level cache hierarchy (if enabled)
-
-#### Optimal Algorithms (for analysis)
-- **Belady**: Optimal offline algorithm
-- **BeladySize**: Size-aware optimal algorithm
-
-```python
-import libcachesim as lcs
-
-# All algorithms use the same unified interface
-cache_size = 1024 * 1024  # 1MB
-
-lru_cache = lcs.LRU(cache_size)
-s3fifo_cache = lcs.S3FIFO(cache_size)
-sieve_cache = lcs.Sieve(cache_size)
-arc_cache = lcs.ARC(cache_size)
-
-# All caches work identically
-req = lcs.Request()
-req.obj_id = 1
-req.obj_size = 100
-hit = lru_cache.get(req)
-print(hit)
-```
-
-## Examples and Testing
-
-### Algorithm Comparison
-```python
-import libcachesim as lcs
-
-def compare_algorithms(trace_path):
-    reader = lcs.open_trace(trace_path, lcs.TraceType.VSCSI_TRACE)
-    algorithms = ['LRU', 'S3FIFO', 'Sieve', 'ARC']
-    for algo_name in algorithms:
-        cache = getattr(lcs, algo_name)(cache_size=1024*1024)
-        obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
-        print(f"{algo_name}\t\tObj: {obj_miss_ratio:.4f}, Byte: {byte_miss_ratio:.4f}")
-
-compare_algorithms("./data/cloudPhysicsIO.vscsi")
-```
-
-### Performance Benchmarking
-```python
-import time
-
-def benchmark_cache(cache, num_requests=100000):
-    """Benchmark cache performance"""
-    start_time = time.time()
-    for i in range(num_requests):
-        req = lcs.Request()
-        req.obj_id = i % 1000  # Working set of 1000 objects
-        req.obj_size = 100
-        cache.get(req)
-    end_time = time.time()
-    throughput = num_requests / (end_time - start_time)
-    print(f"Processed {num_requests} requests in {end_time - start_time:.2f}s")
-    print(f"Throughput: {throughput:.0f} requests/sec")
-
-# Compare performance
-lru_cache = lcs.LRU(cache_size=1024*1024)
-s3fifo_cache = lcs.S3FIFO(cache_size=1024*1024)
-
-print("LRU Performance:")
-benchmark_cache(lru_cache)
-
-print("\nS3FIFO Performance:")
-benchmark_cache(s3fifo_cache)
-```
-
-## Advanced Usage
-
-### Multi-Format Trace Processing
-
-```python
-import libcachesim as lcs
-
-# Supported trace types
-trace_types = {
-    "oracle": lcs.TraceType.ORACLE_GENERAL_TRACE,
-    "csv": lcs.TraceType.CSV_TRACE,
-    "vscsi": lcs.TraceType.VSCSI_TRACE,
-    "txt": lcs.TraceType.PLAIN_TXT_TRACE
-}
-
-# Open different trace formats
-oracle_reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin", trace_types["oracle"])
-csv_reader = lcs.open_trace("./data/cloudPhysicsIO.txt", trace_types["txt"])
-
-# Process traces with different caches
-caches = [
-    lcs.LRU(cache_size=1024*1024),
-    lcs.S3FIFO(cache_size=1024*1024),
-    lcs.Sieve(cache_size=1024*1024)
-]
-
-for i, cache in enumerate(caches):
-    miss_ratio_oracle = cache.process_trace(oracle_reader)[0]
-    miss_ratio_csv = cache.process_trace(csv_reader)[0]
-    print(f"Cache {i} miss ratio: {miss_ratio_oracle:.4f}, {miss_ratio_csv:.4f}")
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Import Error**: Make sure libCacheSim C++ library is built first:
-```bash
-cmake -G Ninja -B build && ninja -C build
-```
-
-**Performance Issues**: Use `process_trace()` for large workloads instead of individual `get()` calls for better performance.
-
-**Memory Usage**: Monitor cache statistics (`cache.occupied_byte`) and ensure proper cache size limits for your system.
-
-**Custom Cache Issues**: Validate your custom implementation against built-in algorithms using the test functions above.
-
-**Install with uv**: Since automatically building with `uv` will fail due to incomplete source code, please force install the binary file via `uv pip install libcachesim --only-binary=:all:`.
+Another simple implementation via hook functions for S3FIFO respectively is given in [examples](examples/plugin_cache/s3fifo.py).
 
 ### Getting Help
 
-- Check the [main documentation](../doc/) for detailed guides
-- Open issues on [GitHub](https://github.com/1a1a11a/libCacheSim/issues)
+- Check [project documentation](docs.libcachesim.com/python) for detailed guides
+- Open issues on [GitHub](https://github.com/cacheMon/libCacheSim-python/issues)
 - Review [examples](/example) in the main repository
+
+---
+## Reference
+<details>
+<summary> Please cite the following papers if you use libCacheSim. </summary>
+
+```
+@inproceedings{yang2020-workload,
+    author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
+    title = {A large-scale analysis of hundreds of in-memory cache clusters at Twitter},
+    booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
+    year = {2020},
+    isbn = {978-1-939133-19-9},
+    pages = {191--208},
+    url = {https://www.usenix.org/conference/osdi20/presentation/yang},
+    publisher = {USENIX Association},
+}
+
+@inproceedings{yang2023-s3fifo,
+  title = {FIFO Queues Are All You Need for Cache Eviction},
+  author = {Juncheng Yang and Yazhuo Zhang and Ziyue Qiu and Yao Yue and K.V. Rashmi},
+  isbn = {9798400702297},
+  publisher = {Association for Computing Machinery},
+  booktitle = {Symposium on Operating Systems Principles (SOSP'23)},
+  pages = {130–149},
+  numpages = {20},
+  year={2023}
+}
+
+@inproceedings{yang2023-qdlp,
+  author = {Juncheng Yang and Ziyue Qiu and Yazhuo Zhang and Yao Yue and K.V. Rashmi},
+  title = {FIFO Can Be Better than LRU: The Power of Lazy Promotion and Quick Demotion},
+  year = {2023},
+  isbn = {9798400701955},
+  publisher = {Association for Computing Machinery},
+  doi = {10.1145/3593856.3595887},
+  booktitle = {Proceedings of the 19th Workshop on Hot Topics in Operating Systems (HotOS23)},
+  pages = {70–79},
+  numpages = {10},
+}
+```
+If you used libCacheSim in your research, please cite the above papers.
+
+</details>
+
+---
+
+
+## License
+See [LICENSE](LICENSE) for details.
+
+---
