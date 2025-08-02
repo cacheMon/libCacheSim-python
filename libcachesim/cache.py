@@ -54,7 +54,7 @@ class CacheBase(ABC):
     def get(self, req: Request) -> bool:
         return self._cache.get(req)
 
-    def find(self, req: Request, update_cache: bool = True) -> CacheObject:
+    def find(self, req: Request, update_cache: bool = True) -> Optional[CacheObject]:
         return self._cache.find(req, update_cache)
 
     def can_insert(self, req: Request) -> bool:

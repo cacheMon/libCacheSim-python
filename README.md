@@ -76,11 +76,7 @@ Implement custom cache replacement algorithms using pure Python functions - **no
 
 ### Python Hook Cache Overview
 
-The `PluginCache` allows you to define custom caching behavior through Python callback functions without without any C/C++ compilation. 
-
-### Hook Functions
-
-You need to implement these callback functions:
+The `PluginCache` allows you to define custom caching behavior through Python callback functions. You need to implement these callback functions:
 
 | Function | Signature | Description |
 |----------|-----------|-------------|

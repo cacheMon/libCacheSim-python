@@ -281,7 +281,7 @@ void export_cache(py::module& m) {
           "find",
           [](cache_t& self, const request_t& req, const bool update_cache) {
             cache_obj_t* obj = self.find(&self, &req, update_cache);
-            return py::cast(obj, py::return_value_policy::reference);
+            return obj ? py::cast(obj, py::return_value_policy::reference) : py::none();
           },
           "req"_a, "update_cache"_a = true)
       .def(

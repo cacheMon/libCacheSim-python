@@ -65,4 +65,4 @@ pip install -e .
 
 ## 许可证
 
-本项目采用 Apache License 2.0 许可证。
+本项目采用 GPL-3.0 许可证。
