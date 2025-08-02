@@ -256,7 +256,7 @@ auto make_cache_wrapper(const std::string& fn_name) {
           cache_t* ptr = InitFn(cc_params, params_cstr);
           return std::unique_ptr<cache_t, CacheDeleter>(ptr);
         },
-        "cc_params"_a, "cache_specific_params"_a = "");
+        "cc_params"_a, "cache_specific_params"_a = ""); 
   };
 }
 
@@ -280,7 +280,8 @@ void export_cache(py::module& m) {
       .def(
           "find",
           [](cache_t& self, const request_t& req, const bool update_cache) {
-            return self.find(&self, &req, update_cache);
+            cache_obj_t* obj = self.find(&self, &req, update_cache);
+            return py::cast(obj, py::return_value_policy::reference);
           },
           "req"_a, "update_cache"_a = true)
       .def(
@@ -289,16 +290,23 @@ void export_cache(py::module& m) {
             return self.can_insert(&self, &req);
           },
           "req"_a)
-      .def(
-          "insert",
-          [](cache_t& self, const request_t& req) {
-            return self.insert(&self, &req);
-          },
-          "req"_a)
+          .def(
+            "insert",
+            [](cache_t& self, const request_t& req) -> std::optional<cache_obj_t*> {
+              cache_obj_t* inserted = self.insert(&self, &req);
+              if (inserted == nullptr) {
+                return std::nullopt;
+              }
+              return inserted;
+            },
+            "req"_a,
+            py::return_value_policy::reference  // optional still respected
+        )
+        
       .def(
           "need_eviction",
           [](cache_t& self, const request_t& req) {
-            return self.need_eviction(&self, &req);
+            return self.get_occupied_byte(&self) + req.obj_size > self.cache_size;
           },
           "req"_a)
       .def(
@@ -316,7 +324,8 @@ void export_cache(py::module& m) {
       .def(
           "to_evict",
           [](cache_t& self, const request_t& req) {
-            return self.to_evict(&self, &req);
+            cache_obj_t* obj = self.to_evict(&self, &req);
+            return py::cast(obj, py::return_value_policy::reference);
           },
           "req"_a)
       .def("get_occupied_byte",
@@ -348,7 +357,7 @@ void export_cache(py::module& m) {
              params->default_ttl = default_ttl;
              params->hashpower = hashpower;
              params->consider_obj_metadata = consider_obj_metadata;
-             return params;
+             return std::unique_ptr<common_cache_params_t, CommonCacheParamsDeleter>(params);
            }),
            "cache_size"_a, "default_ttl"_a = 86400 * 300, "hashpower"_a = 24,
            "consider_obj_metadata"_a = false)
@@ -407,7 +416,7 @@ void export_cache(py::module& m) {
              req->hv = hv;
              req->next_access_vtime = next_access_vtime;
              req->ttl = ttl;
-             return req;
+             return std::unique_ptr<request_t, RequestDeleter>(req);
            }),
            "obj_size"_a = 1, "op"_a = OP_NOP, "valid"_a = true, "obj_id"_a = 0,
            "clock_time"_a = 0, "hv"_a = 0, "next_access_vtime"_a = -2,

@@ -86,12 +86,12 @@ environment = { LCS_BUILD_DIR = "{project}/src/libCacheSim/build", MACOSX_DEPLOY
 test-command = "python -c 'import libcachesim; print(\"Import successful\")'"
 
 [tool.cibuildwheel.linux]
-before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y ninja-build cmake libzstd-devel glib2-devel"
-before-build = "pip install pybind11 && git submodule update --init --recursive && python {project}/scripts/smart_build.py"
+before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y git && git submodule update --init --recursive && bash scripts/install_deps.sh"
+before-build = "pip install pybind11 && rm -rf src/libCacheSim/build"
 
 [tool.cibuildwheel.macos]
-before-all = "brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm"
-before-build = "pip install pybind11 && git submodule update --init --recursive && python {project}/scripts/smart_build.py"
+before-all = "brew install git && git submodule update --init --recursive && bash scripts/install_deps.sh"
+before-build = "pip install pybind11 &&  rm -rf src/libCacheSim/build"
 
 [tool.ruff]
 # Allow lines to be as long as 120.

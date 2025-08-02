@@ -281,6 +281,8 @@ class LIRS(CacheBase):
             _cache=LIRS_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
         )
 
+    def insert(self, req: Request) -> Optional[CacheObject]:
+        return super().insert(req)
 
 class TwoQ(CacheBase):
     """2Q replacement algorithm
@@ -360,7 +362,7 @@ class LeCaR(CacheBase):
         update_weight: bool = True,
         lru_weight: float = 0.5,
     ):
-        cache_specific_params = f"update-weight={update_weight}, lru-weight={lru_weight}"
+        cache_specific_params = f"update-weight={int(update_weight)}, lru-weight={lru_weight}"
         super().__init__(
             _cache=LeCaR_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
@@ -383,7 +385,7 @@ class ClockPro(CacheBase):
     """Clock-Pro replacement algorithm
 
     Special parameters:
-    init_req: initial reference count (default: 0)
+    init_ref: initial reference count (default: 0)
     init_ratio_cold: initial ratio of cold pages (default: 1)
     """
 
@@ -393,10 +395,10 @@ class ClockPro(CacheBase):
         default_ttl: int = 86400 * 300,
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
-        init_req: int = 0,
+        init_ref: int = 0,
         init_ratio_cold: float = 0.5,
     ):
-        cache_specific_params = f"init-req={init_req}, init-ratio-cold={init_ratio_cold}"
+        cache_specific_params = f"init-ref={init_ref}, init-ratio-cold={init_ratio_cold}"
         super().__init__(
             _cache=ClockPro_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
@@ -451,13 +453,19 @@ class BeladySize(CacheBase):
 
 
 class LRUProb(CacheBase):
-    """LRU with Probabilistic Replacement (no special parameters)"""
+    """LRU with Probabilistic Replacement
+    
+    Special parameters:
+    prob: probability of promoting an object to the head of the queue (default: 0.5)
+    """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False,
+        prob: float = 0.5,
     ):
+        cache_specific_params = f"prob={prob}"
         super().__init__(
-            _cache=LRU_Prob_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LRU_Prob_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params)
         )
 
 
