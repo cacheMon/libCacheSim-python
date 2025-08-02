@@ -264,7 +264,7 @@ void export_reader(py::module& m) {
             if (ret != 0) {
               throw std::runtime_error("Failed to read request");
             }
-            return req;
+            return ret;
           },
           "req"_a)
       .def("reset", [](reader_t& self) { reset_reader(&self); })

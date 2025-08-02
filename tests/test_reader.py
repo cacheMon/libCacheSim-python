@@ -30,7 +30,7 @@ class TestSyntheticReader:
 
         # Read some requests and verify they are valid
         req = Request()
-        first_req = reader.read_one_req(req)
+        first_req = reader.read_one_req()
         assert first_req.obj_id >= 0
         assert first_req.obj_size == 1024
         assert hasattr(first_req, "op")  # Just check it has op attribute
@@ -44,7 +44,7 @@ class TestSyntheticReader:
         # Read some requests
         req = Request()
         for _ in range(10):
-            read_req = reader.read_one_req(req)
+            read_req = reader.read_one_req()
             assert read_req.obj_size == 512
             assert hasattr(read_req, "op")  # Just check it has op attribute
 
@@ -68,13 +68,13 @@ class TestSyntheticReader:
 
         # Read some requests
         req = Request()
-        first_read = reader.read_one_req(req)
-        reader.read_one_req(req)
-        reader.read_one_req(req)
+        first_read = reader.read_one_req()
+        reader.read_one_req()
+        reader.read_one_req()
 
         # Reset and read again
         reader.reset()
-        reset_read = reader.read_one_req(req)
+        reset_read = reader.read_one_req()
 
         # Should get the same first request after reset
         assert first_read.obj_id == reset_read.obj_id
@@ -89,7 +89,7 @@ class TestSyntheticReader:
 
         # Verify we can still read remaining requests
         req = Request()
-        read_req = reader.read_one_req(req)
+        read_req = reader.read_one_req()
         assert read_req.valid == True  # Should still be able to read
 
     def test_clone_reader(self):
@@ -98,8 +98,8 @@ class TestSyntheticReader:
 
         # Read some requests
         req = Request()
-        reader.read_one_req(req)
-        reader.read_one_req(req)
+        reader.read_one_req()
+        reader.read_one_req()
 
         # Clone the reader
         cloned_reader = reader.clone()
@@ -160,7 +160,7 @@ class TestTraceReader:
 
             # Read first request
             req = Request()
-            first_req = reader.read_one_req(req)
+            first_req = reader.read_one_req()
             assert first_req.obj_id == 100
             assert first_req.obj_size == 1024
 
@@ -192,11 +192,11 @@ class TestTraceReader:
 
             # Read requests one by one instead of using list()
             req = Request()
-            first_req = reader.read_one_req(req)
+            first_req = reader.read_one_req()
             assert first_req.obj_id == 100
             assert first_req.obj_size == 1024
 
-            second_req = reader.read_one_req(req)
+            second_req = reader.read_one_req()
             assert second_req.obj_id == 101
             assert second_req.obj_size == 2048
 
@@ -226,21 +226,21 @@ class TestTraceReader:
 
             # Read some requests
             req = Request()
-            first_req = reader.read_one_req(req)
-            reader.read_one_req(req)
+            first_req = reader.read_one_req()
+            reader.read_one_req()
 
             # Reset and verify we get same first request
             reader.reset()
-            reset_req = reader.read_one_req(req)
+            reset_req = reader.read_one_req()
             assert first_req.obj_id == reset_req.obj_id
 
             # Test skip functionality
             reader.reset()
             # Instead of using skip_n_req which might fail, just read requests one by one
             for _ in range(5):
-                reader.read_one_req(req)
+                reader.read_one_req()
 
-            next_req = reader.read_one_req(req)
+            next_req = reader.read_one_req()
             assert next_req.obj_id == 105  # Should be 6th request (100+5)
 
         finally:
@@ -276,7 +276,7 @@ class TestTraceReader:
 
             # Read a few requests to verify it works
             req = Request()
-            first_req = reader.read_one_req(req)
+            first_req = reader.read_one_req()
             assert first_req.valid == True
 
         finally:
@@ -411,8 +411,8 @@ class TestReaderCompatibility:
 
             # Get requests from both readers
             req = Request()
-            synthetic_req = synthetic_reader.read_one_req(req)
-            trace_req = trace_reader.read_one_req(req)
+            synthetic_req = synthetic_reader.read_one_req()
+            trace_req = trace_reader.read_one_req()
 
             # Both should produce Request objects with same attributes
             assert hasattr(synthetic_req, "obj_id")
