@@ -30,6 +30,10 @@ done
 # For submodule update
 git submodule update --init --recursive
 git submodule update --recursive --remote
+if [ $? -ne 0 ]; then
+  echo "Error: git submodule update failed"
+  exit 1
+fi
 
 python scripts/sync_version.py
 python -m pip install -e . -vvv

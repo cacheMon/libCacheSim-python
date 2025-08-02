@@ -1,212 +1,255 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 project(libCacheSim-python)
+
+# Project metadata
 set(DESCRIPTION "The libCacheSim Python Package")
 set(PROJECT_WEB "https://docs.libcachesim.com/python")
 
-# Set compiler-specific flags
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CXX_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CXX_FLAGS "-Wno-array-bounds")
-else()
-    set(CXX_FLAGS "")
-endif()
-
-# Options from the libCacheSim library
-option(ENABLE_GLCACHE "enable group-learned cache" ON)
-option(ENABLE_LRB "enable LRB" ON)
-option(ENABLE_3L_CACHE "enable 3LCache" ON)
-
+# Build type configuration
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug" FORCE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Debug" FORCE)
+endif()
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+
+# Options
+option(ENABLE_GLCACHE "Enable group-learned cache" ON)
+option(ENABLE_LRB "Enable LRB" ON)
+option(ENABLE_3L_CACHE "Enable 3LCache" ON)
+
+# C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# =============================================================================
+# Compiler Flags Configuration
+# =============================================================================
+
+# Base flags for all compilers
+set(BASE_C_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
+set(BASE_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
+
+# Compiler-specific flags
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(COMPILER_SPECIFIC_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(COMPILER_SPECIFIC_FLAGS "-Wno-array-bounds")
+else()
+    set(COMPILER_SPECIFIC_FLAGS "")
 endif()
 
-message(STATUS "CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE}")
+# Apply flags
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BASE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}")
 
-# 1. Auto-initialize submodules if not already done
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    # Check if submodule is initialized
-    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/src/libCacheSim/CMakeLists.txt")
-        message(STATUS "Initializing git submodules...")
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}")
+# =============================================================================
+# Git Submodule Management
+# =============================================================================
+
+function(initialize_submodules)
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+        if(NOT EXISTS "${PROJECT_SOURCE_DIR}/src/libCacheSim/CMakeLists.txt")
+            message(STATUS "Initializing git submodules...")
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                RESULT_VARIABLE GIT_SUBMOD_RESULT
+            )
+            if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+                message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}")
+            endif()
         endif()
     endif()
-endif()
+endfunction()
 
-# 2. Auto-build libCacheSim if needed
+initialize_submodules()
+
+# =============================================================================
+# libCacheSim Build Configuration
+# =============================================================================
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/cmake/Modules/")
 set(LIBCACHESIM_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim")
+set(LIBCACHESIM_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
+
 if(NOT EXISTS "${LIBCACHESIM_SOURCE_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "libCacheSim submodule not found. Please run 'git submodule update --init --recursive'")
 endif()
 
-# Build libCacheSim first
-set(LIBCACHESIM_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
-message(STATUS "Building libCacheSim...")
-
-# Set compiler environment variables if available
-set(CMAKE_ARGS "")
-
-# Add compiler flags to disable specific checks
-list(APPEND CMAKE_ARGS "-DCMAKE_C_FLAGS=-fPIC -fno-strict-overflow -fno-strict-aliasing")
-
-# Set compiler-specific CXX flags for subproject
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(SUB_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-cast-user-defined -Wno-array-bounds")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(SUB_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-array-bounds")
-else()
-    set(SUB_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
-endif()
-
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${SUB_CXX_FLAGS}")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_DEBUG=-g ${SUB_CXX_FLAGS}")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${SUB_CXX_FLAGS}")
-list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${SUB_CXX_FLAGS}")
-
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -S ${LIBCACHESIM_SOURCE_DIR} -B ${LIBCACHESIM_BUILD_DIR} -G Ninja -DENABLE_LRB=${ENABLE_LRB} -DENABLE_GLCACHE=${ENABLE_GLCACHE} -DENABLE_3L_CACHE=${ENABLE_3L_CACHE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ${CMAKE_ARGS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    RESULT_VARIABLE CMAKE_CONFIG_RESULT
-)
-if(NOT CMAKE_CONFIG_RESULT EQUAL "0")
-    message(FATAL_ERROR "Failed to configure libCacheSim")
-endif()
+function(build_libcachesim)
+    message(STATUS "Building libCacheSim...")
     
-execute_process(
-    COMMAND ${CMAKE_COMMAND} --build ${LIBCACHESIM_BUILD_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    RESULT_VARIABLE CMAKE_BUILD_RESULT
-)
-if(NOT CMAKE_BUILD_RESULT EQUAL "0")
-    message(FATAL_ERROR "Failed to build libCacheSim")
-endif()
+    # Prepare CMake arguments for subproject
+    set(CMAKE_ARGS
+        "-DCMAKE_C_FLAGS=${BASE_C_FLAGS}"
+        "-DCMAKE_CXX_FLAGS=${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
+        "-DCMAKE_CXX_FLAGS_DEBUG=-g ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
+        "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
+        "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
+    )
+    
+    # Configure libCacheSim
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} 
+            -S ${LIBCACHESIM_SOURCE_DIR} 
+            -B ${LIBCACHESIM_BUILD_DIR} 
+            -G Ninja 
+            -DENABLE_LRB=${ENABLE_LRB} 
+            -DENABLE_GLCACHE=${ENABLE_GLCACHE} 
+            -DENABLE_3L_CACHE=${ENABLE_3L_CACHE} 
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} 
+            ${CMAKE_ARGS}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE CMAKE_CONFIG_RESULT
+    )
+    if(NOT CMAKE_CONFIG_RESULT EQUAL "0")
+        message(FATAL_ERROR "Failed to configure libCacheSim")
+    endif()
+    
+    # Build libCacheSim
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} --build ${LIBCACHESIM_BUILD_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE CMAKE_BUILD_RESULT
+    )
+    if(NOT CMAKE_BUILD_RESULT EQUAL "0")
+        message(FATAL_ERROR "Failed to build libCacheSim")
+    endif()
+endfunction()
 
-# Note(haocheng): now we still utilize the exported cache from 
-# the main project, which should be deprecated soon 
+build_libcachesim()
 
-# Include exported variables from cache
-if(DEFINED LIBCB_BUILD_DIR)
-    set(MAIN_PROJECT_BUILD_DIR "${LIBCB_BUILD_DIR}")
-    message(STATUS "Using provided LIBCB_BUILD_DIR: ${LIBCB_BUILD_DIR}")
-else()
-    set(MAIN_PROJECT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim/build")
-endif()
-set(EXPORT_FILE "${MAIN_PROJECT_BUILD_DIR}/export_vars.cmake")
+# =============================================================================
+# Logging Configuration
+# =============================================================================
 
-if(EXISTS "${EXPORT_FILE}")
-    include("${EXPORT_FILE}")
-    message(STATUS "Loaded variables from export_vars.cmake")
-else()
-    message(FATAL_ERROR "export_vars.cmake not found at ${EXPORT_FILE}. Please build the main project first (e.g. cd .. && cmake -G Ninja -B build)")
-endif()
-
-# Force enable -fPIC and disable specific checks
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing")
-
-# Set compiler-specific flags for current project
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-cast-user-defined -Wno-array-bounds")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing -Wno-array-bounds")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-overflow -fno-strict-aliasing")
-endif()
-
-project(libCacheSim-python VERSION "${LIBCACHESIM_VERSION}")
-
-if(LOG_LEVEL_LOWER STREQUAL "default")
-    if(CMAKE_BUILD_TYPE_LOWER MATCHES "debug")
+function(configure_logging)
+    string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
+    string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
+    
+    if(LOG_LEVEL_LOWER STREQUAL "default")
+        if(CMAKE_BUILD_TYPE_LOWER MATCHES "debug")
+            add_compile_definitions(LOGLEVEL=6)
+        else()
+            add_compile_definitions(LOGLEVEL=7)
+        endif()
+    elseif(LOG_LEVEL_LOWER STREQUAL "verbose")
+        add_compile_definitions(LOGLEVEL=5)
+    elseif(LOG_LEVEL_LOWER STREQUAL "debug")
         add_compile_definitions(LOGLEVEL=6)
+    elseif(LOG_LEVEL_LOWER STREQUAL "info")
+        add_compile_definitions(LOGLEVEL=7)
+    elseif(LOG_LEVEL_LOWER STREQUAL "warn")
+        add_compile_definitions(LOGLEVEL=8)
+    elseif(LOG_LEVEL_LOWER STREQUAL "error")
+        add_compile_definitions(LOGLEVEL=9)
     else()
         add_compile_definitions(LOGLEVEL=7)
     endif()
-elseif(LOG_LEVEL_LOWER STREQUAL "verbose")
-    add_compile_definitions(LOGLEVEL=5)
-elseif(LOG_LEVEL_LOWER STREQUAL "debug")
-    add_compile_definitions(LOGLEVEL=6)
-elseif(LOG_LEVEL_LOWER STREQUAL "info")
-    add_compile_definitions(LOGLEVEL=7)
-elseif(LOG_LEVEL_LOWER STREQUAL "warn")
-    add_compile_definitions(LOGLEVEL=8)
-elseif(LOG_LEVEL_LOWER STREQUAL "error")
-    add_compile_definitions(LOGLEVEL=9)
-else()
-    add_compile_definitions(LOGLEVEL=7)
-endif()
+endfunction()
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+configure_logging()
 
-# Find python and pybind11
+# =============================================================================
+# Dependency Management
+# =============================================================================
+
+# Find required packages
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
+find_package(PkgConfig REQUIRED)
 
-set(optional_dependency_libs "")
+# Initialize dependency lists
+set(required_libs "")
+set(optional_libs "")
 
-# Find optional deps
+# GLib dependency
+pkg_check_modules(GLib REQUIRED glib-2.0)
+include_directories(${GLib_INCLUDE_DIRS})
+link_directories(${GLib_LIBRARY_DIRS})
+list(APPEND required_libs ${GLib_LIBRARIES})
+
+# ZSTD dependency
+find_package(ZSTD REQUIRED)
+message(STATUS "ZSTD_INCLUDE_DIR: ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES: ${ZSTD_LIBRARIES}")
+if("${ZSTD_LIBRARIES}" STREQUAL "")
+    message(FATAL_ERROR "zstd not found")
+endif()
+include_directories(${ZSTD_INCLUDE_DIR})
+link_directories(${ZSTD_LIBRARY_DIRS})
+list(APPEND required_libs ${ZSTD_LIBRARIES})
+
+# Optional dependencies based on features
 if(ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
-    list(APPEND optional_dependency_libs xgboost::xgboost)
+    list(APPEND optional_libs xgboost::xgboost)
     add_compile_definitions(ENABLE_GLCACHE=1)
-    message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
+    message(STATUS "XGBOOST_INCLUDE_DIR: ${XGBOOST_INCLUDE_DIR}")
 endif()
 
-foreach(FEATURE ENABLE_LRB ENABLE_3L_CACHE)
-    if(${FEATURE})
-        find_path(LIGHTGBM_PATH LightGBM)
-        if(NOT LIGHTGBM_PATH)
-            message(FATAL_ERROR "LIGHTGBM_PATH not found")
-        endif()
-        # include_directories(${LIGHTGBM_PATH})
+# LightGBM for LRB and 3L_CACHE
+set(LIGHTGBM_FEATURES ENABLE_LRB ENABLE_3L_CACHE)
+set(LIGHTGBM_NEEDED FALSE)
 
-        find_library(LIGHTGBM_LIB _lightgbm)
-        if(NOT LIGHTGBM_LIB)
-            message(FATAL_ERROR "LIGHTGBM_LIB not found")
-        endif()
-        list(APPEND optional_dependency_libs ${LIGHTGBM_LIB})
+foreach(FEATURE ${LIGHTGBM_FEATURES})
+    if(${FEATURE})
+        set(LIGHTGBM_NEEDED TRUE)
         add_compile_definitions(${FEATURE}=1)
     endif()
 endforeach()
 
-# Include directories for dependencies
-include_directories(${GLib_INCLUDE_DIRS})
-include_directories(${GLib_CONFIG_INCLUDE_DIR})
-include_directories(${XGBOOST_INCLUDE_DIR})
-include_directories(${LIGHTGBM_PATH})
-include_directories(${ZSTD_INCLUDE_DIR})
-include_directories(${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin)
-
-# Find the main libCacheSim library
-set(MAIN_PROJECT_BUILD_DIR "${MAIN_PROJECT_BUILD_DIR}")
-set(MAIN_PROJECT_LIB_PATH "${MAIN_PROJECT_BUILD_DIR}/liblibCacheSim.a")
-
-if(EXISTS "${MAIN_PROJECT_LIB_PATH}")
-    message(STATUS "Found pre-built libCacheSim library at ${MAIN_PROJECT_LIB_PATH}")
-
-    # Import the main library as an imported target
-    add_library(libCacheSim_main STATIC IMPORTED)
-    set_target_properties(libCacheSim_main PROPERTIES
-        IMPORTED_LOCATION "${MAIN_PROJECT_LIB_PATH}"
-        INTERFACE_INCLUDE_DIRECTORIES "${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/utils/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim"
-    )
-    link_directories(${GLib_LIBRARY_DIRS})
-    link_directories(${ZSTD_LIBRARY_DIRS})
-    set(LIBCACHESIM_TARGET libCacheSim_main)
-
-else()
-    message(FATAL_ERROR "Pre-built libCacheSim library not found. Please build the main project first: cd .. && cmake -G Ninja -B build && ninja -C build")
+if(LIGHTGBM_NEEDED)
+    if(NOT DEFINED LIGHTGBM_PATH)
+        find_path(LIGHTGBM_PATH LightGBM)
+    endif()
+    if(NOT LIGHTGBM_PATH)
+        message(FATAL_ERROR "LIGHTGBM_PATH not found")
+    endif()
+    
+    if(NOT DEFINED LIGHTGBM_LIB)
+        find_library(LIGHTGBM_LIB _lightgbm)
+    endif()
+    if(NOT LIGHTGBM_LIB)
+        message(FATAL_ERROR "LIGHTGBM_LIB not found")
+    endif()
+    
+    include_directories(${LIGHTGBM_PATH})
+    list(APPEND optional_libs ${LIGHTGBM_LIB})
 endif()
 
-include_directories(src)
+# =============================================================================
+# libCacheSim Library Target
+# =============================================================================
 
-python_add_library(libcachesim_python MODULE
+set(MAIN_PROJECT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/libCacheSim")
+set(MAIN_PROJECT_BUILD_DIR "${LIBCACHESIM_BUILD_DIR}")
+set(MAIN_PROJECT_LIB_PATH "${MAIN_PROJECT_BUILD_DIR}/liblibCacheSim.a")
+
+if(NOT EXISTS "${MAIN_PROJECT_LIB_PATH}")
+    message(FATAL_ERROR "Pre-built libCacheSim library not found at ${MAIN_PROJECT_LIB_PATH}. Please build the main project first.")
+endif()
+
+message(STATUS "Found pre-built libCacheSim library at ${MAIN_PROJECT_LIB_PATH}")
+
+# Import the main library as an imported target
+add_library(libCacheSim_main STATIC IMPORTED)
+set_target_properties(libCacheSim_main PROPERTIES
+    IMPORTED_LOCATION "${MAIN_PROJECT_LIB_PATH}"
+    INTERFACE_INCLUDE_DIRECTORIES 
+        "${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/utils/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim"
+)
+
+# =============================================================================
+# Python Module Configuration
+# =============================================================================
+
+include_directories(src)
+include_directories(${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin)
+
+# Define source files
+set(PYTHON_MODULE_SOURCES
     src/export.cpp
     src/export_cache.cpp
     src/export_reader.cpp
@@ -217,9 +260,12 @@ python_add_library(libcachesim_python MODULE
     ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/traceUtils/traceConvLCS.cpp
     ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/traceUtils/traceConvOracleGeneral.cpp
     ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/traceUtils/utils.cpp
-    WITH_SOABI
 )
 
+# Create Python module
+python_add_library(libcachesim_python MODULE ${PYTHON_MODULE_SOURCES} WITH_SOABI)
+
+# Configure target properties
 set_target_properties(libcachesim_python PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     INSTALL_RPATH_USE_LINK_PATH TRUE
@@ -229,43 +275,48 @@ set_target_properties(libcachesim_python PROPERTIES
 
 target_compile_definitions(libcachesim_python PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
+# =============================================================================
+# Platform-Specific Configuration
+# =============================================================================
+
+function(configure_platform_specific_linking target)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_options(${target} PRIVATE -Wl,--no-as-needed)
+        target_link_libraries(${target} PRIVATE dl)
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        # Find argp library on macOS
+        find_library(ARGP_LIBRARY argp PATHS /opt/homebrew/lib /usr/local/lib)
+        if(ARGP_LIBRARY)
+            target_link_libraries(${target} PRIVATE ${ARGP_LIBRARY})
+        endif()
+        
+        # Find and link intl library
+        find_library(INTL_LIBRARY intl PATHS /opt/homebrew/lib /usr/local/lib)
+        if(INTL_LIBRARY)
+            target_link_libraries(${target} PRIVATE ${INTL_LIBRARY})
+        endif()
+    else()
+        # Other platforms - try to link dl if available
+        find_library(DL_LIBRARY dl)
+        if(DL_LIBRARY)
+            target_link_libraries(${target} PRIVATE ${DL_LIBRARY})
+        endif()
+    endif()
+endfunction()
+
+# Link libraries
 target_link_libraries(libcachesim_python PRIVATE
-    ${LIBCACHESIM_TARGET}
+    libCacheSim_main
     pybind11::headers
     pybind11::module
-    ${GLib_LIBRARIES}
-    ${ZSTD_LIBRARIES}
-    ${optional_dependency_libs}
+    ${required_libs}
+    ${optional_libs}
 )
 
-# Add platform-specific link options and libraries
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # GNU ld option, only available on Linux
-    target_link_options(libcachesim_python PRIVATE -Wl,--no-as-needed)
-    target_link_libraries(libcachesim_python PRIVATE dl)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    # macOS doesn't need --no-as-needed
-    # dl functions are part of the system library on macOS
-    # No need to explicitly link dl
+configure_platform_specific_linking(libcachesim_python)
 
-    # Find argp library on macOS
-    find_library(ARGP_LIBRARY argp PATHS /opt/homebrew/lib /usr/local/lib)
-    if(ARGP_LIBRARY)
-        target_link_libraries(libcachesim_python PRIVATE ${ARGP_LIBRARY})
-    endif()
+# =============================================================================
+# Installation
+# =============================================================================
 
-    # Find and link other dependencies that might be needed
-    find_library(INTL_LIBRARY intl PATHS /opt/homebrew/lib /usr/local/lib)
-    if(INTL_LIBRARY)
-        target_link_libraries(libcachesim_python PRIVATE ${INTL_LIBRARY})
-    endif()
-else()
-    # Other platforms - try to link dl if available
-    find_library(DL_LIBRARY dl)
-    if(DL_LIBRARY)
-        target_link_libraries(libcachesim_python PRIVATE ${DL_LIBRARY})
-    endif()
-endif()
-
-# install to wheel directory
 install(TARGETS libcachesim_python LIBRARY DESTINATION libcachesim)
