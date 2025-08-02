@@ -167,8 +167,12 @@ class TraceReader(ReaderProtocol):
     def get_num_of_req(self) -> int:
         return self._reader.get_num_of_req()
 
-    def read_one_req(self, req: Request) -> Request:
-        return self._reader.read_one_req(req)
+    def read_one_req(self) -> Request:
+        req = Request()
+        ret = self._reader.read_one_req(req) # return 0 if success
+        if ret != 0:
+            raise RuntimeError("Failed to read one request")
+        return req
 
     def reset(self) -> None:
         self._reader.reset()
@@ -198,19 +202,23 @@ class TraceReader(ReaderProtocol):
         self._reader.set_read_pos(pos)
 
     def __iter__(self) -> Iterator[Request]:
-        return self._reader.__iter__()
+        self._reader.reset()
+        return self
 
     def __len__(self) -> int:
         return self._reader.get_num_of_req()
 
     def __next__(self) -> Request:
-        if self._reader.n_req_left == 0:
+        req = Request()
+        ret = self._reader.read_one_req(req)
+        if ret != 0:
             raise StopIteration
-        return self._reader.read_one_req()
+        return req
 
     def __getitem__(self, index: int) -> Request:
         if index < 0 or index >= self._reader.get_num_of_req():
             raise IndexError("Index out of range")
         self._reader.reset()
         self._reader.skip_n_req(index)
-        return self._reader.read_one_req()
+        req = Request()
+        return self._reader.read_one_req(req)

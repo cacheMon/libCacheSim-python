@@ -62,7 +62,7 @@ ref_lru_cache = LRU(cache_size=1024)
 
 reader = SyntheticReader(
     num_of_req=100000,
-    num_objects=100,
+    num_objects=10000,
     obj_size=100,
     seed=42,
     alpha=0.8,
