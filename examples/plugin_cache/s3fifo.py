@@ -171,12 +171,7 @@ def cache_remove_hook(cache, obj_id):
     cache.cache_remove(obj_id)
 
 def cache_free_hook(cache):
-    cache.small_fifo.clear()
-    cache.small_freq.clear()
-    cache.ghost_fifo.clear()
-    cache.ghost_freq.clear()
-    cache.main_fifo.clear()
-    cache.main_freq.clear()
+    pass
 
 cache = PluginCache(
     cache_size=1024,

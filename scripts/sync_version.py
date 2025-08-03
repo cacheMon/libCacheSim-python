@@ -60,6 +60,10 @@ def update_pyproject_toml(version):
     if current_version == version:
         print(f"Python binding version already up to date: {version}")
         return False
+    # If the pyproject version is newer than version.txt, it is allowed.
+    if current_version > version:
+        print(f"Warning: pyproject version {current_version} is newer than version.txt {version}, skipping update")
+        return False
     # replace the version line with the new version
     pyproject_data = re.sub(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", f'version = "{version}"', pyproject_data)
 
