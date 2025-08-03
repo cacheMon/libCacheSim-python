@@ -21,6 +21,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# ============================================================================
+set(USER_PREFIX "$ENV{HOME}/local")
+
+list(APPEND CMAKE_PREFIX_PATH "${USER_PREFIX}")
+list(APPEND CMAKE_LIBRARY_PATH "${USER_PREFIX}/lib")
+list(APPEND CMAKE_INCLUDE_PATH "${USER_PREFIX}/include")
+
+include_directories("${USER_PREFIX}/include")
+link_directories("${USER_PREFIX}/lib")
+
 # =============================================================================
 # Compiler Flags Configuration
 # =============================================================================
@@ -31,7 +41,7 @@ set(BASE_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
 
 # Compiler-specific flags
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(COMPILER_SPECIFIC_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
+    set(COMPILER_SPECIFIC_FLAGS "-Wno-cast-user-defined -Wno-array-bounds -Wno-type-limits")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(COMPILER_SPECIFIC_FLAGS "-Wno-array-bounds")
 else()
@@ -155,8 +165,20 @@ configure_logging()
 # Dependency Management
 # =============================================================================
 
+# Add user-installed dependencies to search paths
+if(DEFINED ENV{CMAKE_PREFIX_PATH})
+    list(PREPEND CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH})
+endif()
+
+# Add common user installation paths
+set(USER_PREFIX_PATHS
+    "$ENV{HOME}/local"
+    "$ENV{HOME}/.local"
+    "/usr/local"
+)
+
 # Find required packages
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 
@@ -170,23 +192,85 @@ include_directories(${GLib_INCLUDE_DIRS})
 link_directories(${GLib_LIBRARY_DIRS})
 list(APPEND required_libs ${GLib_LIBRARIES})
 
-# ZSTD dependency
-find_package(ZSTD REQUIRED)
-message(STATUS "ZSTD_INCLUDE_DIR: ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES: ${ZSTD_LIBRARIES}")
-if("${ZSTD_LIBRARIES}" STREQUAL "")
-    message(FATAL_ERROR "zstd not found")
+# ZSTD dependency - try multiple find methods
+find_package(ZSTD QUIET)
+if(NOT ZSTD_FOUND)
+    # Try pkg-config
+    pkg_check_modules(ZSTD_PC QUIET libzstd)
+    if(ZSTD_PC_FOUND)
+        set(ZSTD_FOUND TRUE)
+        set(ZSTD_INCLUDE_DIR ${ZSTD_PC_INCLUDE_DIRS})
+        set(ZSTD_LIBRARIES ${ZSTD_PC_LIBRARIES})
+        set(ZSTD_LIBRARY_DIRS ${ZSTD_PC_LIBRARY_DIRS})
+    else()
+        # Try manual find
+        find_path(ZSTD_INCLUDE_DIR zstd.h
+            PATHS ${CMAKE_INCLUDE_PATH}
+            PATH_SUFFIXES zstd
+        )
+        find_library(ZSTD_LIBRARIES zstd
+            PATHS ${CMAKE_LIBRARY_PATH}
+        )
+        if(ZSTD_INCLUDE_DIR AND ZSTD_LIBRARIES)
+            set(ZSTD_FOUND TRUE)
+        endif()
+    endif()
 endif()
+
+if(NOT ZSTD_FOUND)
+    message(FATAL_ERROR "ZSTD not found. Please install zstd or set CMAKE_PREFIX_PATH to point to user installation.")
+endif()
+
+message(STATUS "ZSTD_INCLUDE_DIR: ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES: ${ZSTD_LIBRARIES}")
 include_directories(${ZSTD_INCLUDE_DIR})
-link_directories(${ZSTD_LIBRARY_DIRS})
+if(ZSTD_LIBRARY_DIRS)
+    link_directories(${ZSTD_LIBRARY_DIRS})
+endif()
 list(APPEND required_libs ${ZSTD_LIBRARIES})
+
+# TCMalloc dependency (optional)
+find_library(TCMALLOC_LIBRARY tcmalloc
+    PATHS ${CMAKE_LIBRARY_PATH}
+)
+if(TCMALLOC_LIBRARY)
+    list(APPEND optional_libs ${TCMALLOC_LIBRARY})
+    message(STATUS "TCMalloc found: ${TCMALLOC_LIBRARY}")
+    add_compile_definitions(USE_TCMALLOC=1)
+else()
+    message(STATUS "TCMalloc not found, using system malloc")
+endif()
 
 # Optional dependencies based on features
 if(ENABLE_GLCACHE)
-    find_package(xgboost REQUIRED)
-    include_directories(${XGBOOST_INCLUDE_DIR})
-    list(APPEND optional_libs xgboost::xgboost)
-    add_compile_definitions(ENABLE_GLCACHE=1)
-    message(STATUS "XGBOOST_INCLUDE_DIR: ${XGBOOST_INCLUDE_DIR}")
+    # Try to find XGBoost
+    find_package(xgboost QUIET)
+    if(NOT xgboost_FOUND)
+        # Try manual find for user installation
+        find_path(XGBOOST_INCLUDE_DIR xgboost
+            PATHS ${CMAKE_INCLUDE_PATH}
+        )
+        find_library(XGBOOST_LIBRARIES xgboost
+            PATHS ${CMAKE_LIBRARY_PATH}
+        )
+        if(XGBOOST_INCLUDE_DIR AND XGBOOST_LIBRARIES)
+            set(xgboost_FOUND TRUE)
+            add_library(xgboost::xgboost UNKNOWN IMPORTED)
+            set_target_properties(xgboost::xgboost PROPERTIES
+                IMPORTED_LOCATION ${XGBOOST_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${XGBOOST_INCLUDE_DIR}
+            )
+        endif()
+    endif()
+    
+    if(xgboost_FOUND)
+        include_directories(${XGBOOST_INCLUDE_DIR})
+        list(APPEND optional_libs xgboost::xgboost)
+        add_compile_definitions(ENABLE_GLCACHE=1)
+        message(STATUS "XGBOOST_INCLUDE_DIR: ${XGBOOST_INCLUDE_DIR}")
+    else()
+        message(WARNING "XGBoost not found, disabling GLCACHE feature")
+        set(ENABLE_GLCACHE OFF)
+    endif()
 endif()
 
 # LightGBM for LRB and 3L_CACHE
@@ -201,22 +285,30 @@ foreach(FEATURE ${LIGHTGBM_FEATURES})
 endforeach()
 
 if(LIGHTGBM_NEEDED)
+    # Try to find LightGBM
     if(NOT DEFINED LIGHTGBM_PATH)
-        find_path(LIGHTGBM_PATH LightGBM)
-    endif()
-    if(NOT LIGHTGBM_PATH)
-        message(FATAL_ERROR "LIGHTGBM_PATH not found")
+        find_path(LIGHTGBM_PATH LightGBM
+            PATHS ${CMAKE_INCLUDE_PATH}
+        )
     endif()
     
     if(NOT DEFINED LIGHTGBM_LIB)
-        find_library(LIGHTGBM_LIB _lightgbm)
+        find_library(LIGHTGBM_LIB _lightgbm
+            PATHS ${CMAKE_LIBRARY_PATH}
+        )
     endif()
+    
+    if(NOT LIGHTGBM_PATH)
+        message(FATAL_ERROR "LIGHTGBM_PATH not found. Please install LightGBM or set CMAKE_PREFIX_PATH.")
+    endif()
+    
     if(NOT LIGHTGBM_LIB)
-        message(FATAL_ERROR "LIGHTGBM_LIB not found")
+        message(FATAL_ERROR "LIGHTGBM_LIB not found. Please install LightGBM or set CMAKE_PREFIX_PATH.")
     endif()
     
     include_directories(${LIGHTGBM_PATH})
     list(APPEND optional_libs ${LIGHTGBM_LIB})
+    message(STATUS "LightGBM found: ${LIGHTGBM_PATH}, ${LIGHTGBM_LIB}")
 endif()
 
 # =============================================================================
@@ -263,7 +355,7 @@ set(PYTHON_MODULE_SOURCES
 )
 
 # Create Python module
-python_add_library(libcachesim_python MODULE ${PYTHON_MODULE_SOURCES} WITH_SOABI)
+pybind11_add_module(libcachesim_python ${PYTHON_MODULE_SOURCES} WITH_SOABI)
 
 # Configure target properties
 set_target_properties(libcachesim_python PROPERTIES
