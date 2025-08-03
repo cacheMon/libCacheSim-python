@@ -38,7 +38,7 @@ jobs:
         python -m pip install cibuildwheel
 
     - name: Sync Python version
-      run: python scripts/sync_python_version.py
+      run: python scripts/sync_version.py
 
 
     - name: Verify Docker (Linux only)
@@ -49,7 +49,7 @@ jobs:
         echo "Docker is ready for cibuildwheel"
 
     - name: Build wheels
-      run: python -m cibuildwheel libCacheSim-python --output-dir wheelhouse
+      run: python -m cibuildwheel . --output-dir wheelhouse
 
     - name: Upload wheels as artifacts
       uses: actions/upload-artifact@v4
