@@ -21,6 +21,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# ============================================================================
+set(USER_PREFIX "$ENV{HOME}/local")
+
+list(APPEND CMAKE_PREFIX_PATH "${USER_PREFIX}")
+list(APPEND CMAKE_LIBRARY_PATH "${USER_PREFIX}/lib")
+list(APPEND CMAKE_INCLUDE_PATH "${USER_PREFIX}/include")
+
+include_directories("${USER_PREFIX}/include")
+link_directories("${USER_PREFIX}/lib")
+
 # =============================================================================
 # Compiler Flags Configuration
 # =============================================================================
@@ -31,7 +41,7 @@ set(BASE_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
 
 # Compiler-specific flags
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(COMPILER_SPECIFIC_FLAGS "-Wno-cast-user-defined -Wno-array-bounds")
+    set(COMPILER_SPECIFIC_FLAGS "-Wno-cast-user-defined -Wno-array-bounds -Wno-type-limits")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(COMPILER_SPECIFIC_FLAGS "-Wno-array-bounds")
 else()
@@ -167,17 +177,8 @@ set(USER_PREFIX_PATHS
     "/usr/local"
 )
 
-foreach(PREFIX ${USER_PREFIX_PATHS})
-    if(EXISTS "${PREFIX}")
-        list(PREPEND CMAKE_PREFIX_PATH "${PREFIX}")
-        list(PREPEND CMAKE_LIBRARY_PATH "${PREFIX}/lib")
-        list(PREPEND CMAKE_LIBRARY_PATH "${PREFIX}/lib64")
-        list(PREPEND CMAKE_INCLUDE_PATH "${PREFIX}/include")
-    endif()
-endforeach()
-
 # Find required packages
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(PkgConfig REQUIRED)
 
@@ -354,7 +355,7 @@ set(PYTHON_MODULE_SOURCES
 )
 
 # Create Python module
-python_add_library(libcachesim_python MODULE ${PYTHON_MODULE_SOURCES} WITH_SOABI)
+pybind11_add_module(libcachesim_python ${PYTHON_MODULE_SOURCES} WITH_SOABI)
 
 # Configure target properties
 set_target_properties(libcachesim_python PROPERTIES
