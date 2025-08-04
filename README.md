@@ -60,7 +60,7 @@ bash scripts/install_deps.sh
 bash scripts/install_deps_user.sh
 ```
 
-Then, you can reinstall libcachesim using the following commands (you may need to add `--no-cache-dir` to force it building from scratch):
+Then, you can reinstall libcachesim using the following commands (may need to add `--no-cache-dir` to force it to build from scratch):
 
 ```bash
 # Enable LRB
