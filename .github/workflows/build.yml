@@ -50,7 +50,6 @@ jobs:
         run: |
           if [ -d "tests" ]; then
             uv run python -m pytest tests/ -v -m "not optional"
-            uv run python -m pytest tests/ -v -m "optional"
           else
             echo "No tests directory found, skipping tests"
           fi

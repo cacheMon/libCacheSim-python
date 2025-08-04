@@ -86,7 +86,7 @@ skip = ["*-win32", "*-manylinux_i686", "*-musllinux*", "pp*"]
 environment = { LCS_BUILD_DIR = "{project}/src/libCacheSim/build", MACOSX_DEPLOYMENT_TARGET = "14.0", CMAKE_ARGS = "-DENABLE_3L_CACHE=ON -DENABLE_GLCACHE=ON -DENABLE_LRB=ON" }
 
 # Test that the wheel can be imported
-test-command = "python -c 'import libcachesim; print(\"Import successful\")'"
+test-command = "python -c 'import libcachesim; print(\"Import successful\")'; python -m pytest tests/ -v -m 'not optional'; python -m pytest tests/ -v -m 'optional'"
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y git && git submodule update --init --recursive && bash scripts/install_deps.sh"
