@@ -3,14 +3,72 @@
 [![Build](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml)
 [![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)](docs.libcachesim.com/python)
 
-Python bindings for [libCacheSim](https://github.com/1a1a11a/libCacheSim), a high-performance cache simulator and analysis library.
+
+libCacheSim is fast with the features from [underlying libCacheSim lib](https://github.com/1a1a11a/libCacheSim):
+
+- **High performance** - over 20M requests/sec for a realistic trace replay
+- **High memory efficiency** - predictable and small memory footprint
+- **Parallelism out-of-the-box** - uses the many CPU cores to speed up trace analysis and cache simulations
+
+libCacheSim is flexible and easy to use with:
+
+- **Seamless integration** with [open-source cache dataset](https://github.com/cacheMon/cache_dataset) consisting of thousands traces hosted on S3
+- **High-throughput simulation** with the [underlying libCacheSim lib](https://github.com/1a1a11a/libCacheSim)
+- **Detailed cache requests** and other internal data control
+- **Customized plugin cache development** without any compilation
+
+## Prerequisites
+
+- OS: Linux / macOS
+- Python: 3.9 -- 3.13
 
 ## Installation
+
+### Quick Install
 
 Binary installers for the latest released version are available at the [Python Package Index (PyPI)](https://pypi.org/project/libcachesim).
 
 ```bash
 pip install libcachesim
+```
+
+### Recommended Installation with uv
+
+It's recommended to use [uv](https://docs.astral.sh/uv/), a very fast Python environment manager, to create and manage Python environments:
+
+```bash
+uv venv --python 3.12 --seed
+source .venv/bin/activate
+uv pip install libcachesim
+```
+
+### Advanced Features Installation
+
+For users who want to run LRB, ThreeLCache, and GLCache eviction algorithms:
+
+!!! important
+    If `uv` cannot find built wheels for your machine, the building system will skip these algorithms by default.
+
+To enable them, you need to install all third-party dependencies first:
+
+```bash
+git clone https://github.com/cacheMon/libCacheSim-python.git
+cd libCacheSim-python
+bash scripts/install_deps.sh
+
+# If you cannot install software directly (e.g., no sudo access)
+bash scripts/install_deps_user.sh
+```
+
+Then, you can reinstall libcachesim using the following commands (may need to add `--no-cache-dir` to force it to build from scratch):
+
+```bash
+# Enable LRB
+CMAKE_ARGS="-DENABLE_LRB=ON" uv pip install libcachesim
+# Enable ThreeLCache
+CMAKE_ARGS="-DENABLE_3L_CACHE=ON" uv pip install libcachesim
+# Enable GLCache
+CMAKE_ARGS="-DENABLE_GLCACHE=ON" uv pip install libcachesim
 ```
 
 ### Installation from sources
@@ -29,6 +87,42 @@ python -m pytest tests/
 
 ## Quick Start
 
+### Cache Simulation
+
+With libcachesim installed, you can start cache simulation for some eviction algorithm and cache traces:
+
+```python
+import libcachesim as lcs
+
+# Step 1: Get one trace from S3 bucket
+URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
+dl = lcs.DataLoader()
+dl.load(URI)
+
+# Step 2: Open trace and process efficiently
+reader = lcs.TraceReader(
+    trace = dl.get_cache_path(URI),
+    trace_type = lcs.TraceType.ORACLE_GENERAL_TRACE,
+    reader_init_params = lcs.ReaderInitParam(ignore_obj_size=False)
+)
+
+# Step 3: Initialize cache
+cache = lcs.S3FIFO(cache_size=1024*1024)
+
+# Step 4: Process entire trace efficiently (C++ backend)
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
+
+# Step 4.1: Process with limited number of requests
+cache = lcs.S3FIFO(cache_size=1024*1024)
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(
+    reader,
+    start_req=0,
+    max_req=1000
+)
+print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
+```
+
 ### Basic Usage
 
 ```python
@@ -46,7 +140,9 @@ print(cache.get(req))  # False (first access)
 print(cache.get(req))  # True (second access)
 ```
 
-### Trace Processing
+### Trace Analysis
+
+Here is an example demonstrating how to use `TraceAnalyzer`:
 
 ```python
 import libcachesim as lcs
@@ -56,25 +152,40 @@ URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
 dl = lcs.DataLoader()
 dl.load(URI)
 
-# Step 2: Open trace and process efficiently
-reader = lcs.TraceReader(dl.get_cache_path(URI))
+reader = lcs.TraceReader(
+    trace = dl.get_cache_path(URI),
+    trace_type = lcs.TraceType.ORACLE_GENERAL_TRACE,
+    reader_init_params = lcs.ReaderInitParam(ignore_obj_size=False)
+)
 
-# Step 3: Initialize cache
-cache = lcs.S3FIFO(cache_size=1024*1024)
+analysis_option = lcs.AnalysisOption(
+        req_rate=True,  # Keep basic request rate analysis
+        access_pattern=False,  # Disable access pattern analysis
+        size=True,  # Keep size analysis
+        reuse=False,  # Disable reuse analysis for small datasets
+        popularity=False,  # Disable popularity analysis for small datasets (< 200 objects)
+        ttl=False,  # Disable TTL analysis
+        popularity_decay=False,  # Disable popularity decay analysis
+        lifetime=False,  # Disable lifetime analysis
+        create_future_reuse_ccdf=False,  # Disable experimental features
+        prob_at_age=False,  # Disable experimental features
+        size_change=False,  # Disable size change analysis
+    )
 
-# Step 4: Process entire trace efficiently (C++ backend)
-obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
-print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
+analysis_param = lcs.AnalysisParam()
+
+analyzer = lcs.TraceAnalyzer(
+    reader, "example_analysis", analysis_option=analysis_option, analysis_param=analysis_param
+)
+
+analyzer.run()
 ```
 
-> [!NOTE]
-> We DO NOT ignore the object size by defaults, you can add `reader_init_params = lcs.ReaderInitParam(ignore_obj_size=False)` to the initialization of `TraceReader` if needed.
+## Plugin System
 
-## Custom Cache Policies
+libCacheSim allows you to develop your own cache eviction algorithms and test them via the plugin system without any C/C++ compilation required.
 
-Implement custom cache replacement algorithms using pure Python functions - **no C/C++ compilation required**.
-
-### Python Hook Cache Overview
+### Plugin Cache Overview
 
 The `PluginCache` allows you to define custom caching behavior through Python callback functions. You need to implement these callback functions:
 
@@ -87,74 +198,51 @@ The `PluginCache` allows you to define custom caching behavior through Python ca
 | `remove_hook` | `(data: Any, obj_id: int) -> None` | Clean up when object removed |
 | `free_hook` | `(data: Any) -> None` | [Optional] Final cleanup |
 
-<details>
-<summary>An example for LRU</summary>
+### Example: Implementing LRU via Plugin System
 
 ```python
 from collections import OrderedDict
-from libcachesim import PluginCache, CommonCacheParams, Request, SyntheticReader, LRU
+from typing import Any
 
+from libcachesim import PluginCache, LRU, CommonCacheParams, Request
 
-class StandaloneLRU:
-    def __init__(self):
-        self.cache_data = OrderedDict()
+def init_hook(_: CommonCacheParams) -> Any:
+    return OrderedDict()
 
-    def cache_hit(self, obj_id):
-        if obj_id in self.cache_data:
-            obj_size = self.cache_data.pop(obj_id)
-            self.cache_data[obj_id] = obj_size
+def hit_hook(data: Any, req: Request) -> None:
+    data.move_to_end(req.obj_id, last=True)
 
-    def cache_miss(self, obj_id, obj_size):
-        self.cache_data[obj_id] = obj_size
+def miss_hook(data: Any, req: Request) -> None:
+    data.__setitem__(req.obj_id, req.obj_size)
 
-    def cache_eviction(self):
-        evicted_id, _ = self.cache_data.popitem(last=False)
-        return evicted_id
+def eviction_hook(data: Any, _: Request) -> int:
+    return data.popitem(last=False)[0]
 
-    def cache_remove(self, obj_id):
-        if obj_id in self.cache_data:
-            del self.cache_data[obj_id]
+def remove_hook(data: Any, obj_id: int) -> None:
+    data.pop(obj_id, None)
 
-
-def cache_init_hook(common_cache_params: CommonCacheParams):
-    return StandaloneLRU()
-
-
-def cache_hit_hook(cache, request: Request):
-    cache.cache_hit(request.obj_id)
-
-
-def cache_miss_hook(cache, request: Request):
-    cache.cache_miss(request.obj_id, request.obj_size)
-
-
-def cache_eviction_hook(cache, request: Request):
-    return cache.cache_eviction()
-
-
-def cache_remove_hook(cache, obj_id):
-    cache.cache_remove(obj_id)
-
-
-def cache_free_hook(cache):
-    cache.cache_data.clear()
-
+def free_hook(data: Any) -> None:
+    data.clear()
 
 plugin_lru_cache = PluginCache(
-    cache_size=1024,
-    cache_init_hook=cache_init_hook,
-    cache_hit_hook=cache_hit_hook,
-    cache_miss_hook=cache_miss_hook,
-    cache_eviction_hook=cache_eviction_hook,
-    cache_remove_hook=cache_remove_hook,
-    cache_free_hook=cache_free_hook,
-    cache_name="CustomizedLRU",
+    cache_size=128,
+    cache_init_hook=init_hook,
+    cache_hit_hook=hit_hook,
+    cache_miss_hook=miss_hook,
+    cache_eviction_hook=eviction_hook,
+    cache_remove_hook=remove_hook,
+    cache_free_hook=free_hook,
+    cache_name="Plugin_LRU",
 )
+
+reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1)
+req_miss_ratio, byte_miss_ratio = plugin_lru_cache.process_trace(reader)
+ref_req_miss_ratio, ref_byte_miss_ratio = LRU(128).process_trace(reader)
+print(f"plugin req miss ratio {req_miss_ratio}, ref req miss ratio {ref_req_miss_ratio}")
+print(f"plugin byte miss ratio {byte_miss_ratio}, ref byte miss ratio {ref_byte_miss_ratio}")
 ```
-</details>
 
-
-Another simple implementation via hook functions for S3FIFO respectively is given in [examples](examples/plugin_cache/s3fifo.py).
+By defining custom hook functions for cache initialization, hit, miss, eviction, removal, and cleanup, users can easily prototype and test their own cache eviction algorithms.
 
 ### Getting Help
 
@@ -207,7 +295,6 @@ If you used libCacheSim in your research, please cite the above papers.
 </details>
 
 ---
-
 
 ## License
 See [LICENSE](LICENSE) for details.
