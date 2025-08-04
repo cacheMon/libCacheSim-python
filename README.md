@@ -17,11 +17,6 @@ libCacheSim is flexible and easy to use with:
 - **Detailed cache requests** and other internal data control
 - **Customized plugin cache development** without any compilation
 
-## Prerequisites
-
-- OS: Linux / macOS
-- Python: 3.9 -- 3.13
-
 ## Installation
 
 ### Quick Install
@@ -32,50 +27,15 @@ Binary installers for the latest released version are available at the [Python P
 pip install libcachesim
 ```
 
-### Recommended Installation with uv
-
-It's recommended to use [uv](https://docs.astral.sh/uv/), a very fast Python environment manager, to create and manage Python environments:
-
-```bash
-uv venv --python 3.12 --seed
-source .venv/bin/activate
-uv pip install libcachesim
-```
-
-### Advanced Features Installation
-
-For users who want to run LRB, ThreeLCache, and GLCache eviction algorithms:
-
-!!! important
-    If `uv` cannot find built wheels for your machine, the building system will skip these algorithms by default.
-
-To enable them, you need to install all third-party dependencies first:
-
-```bash
-git clone https://github.com/cacheMon/libCacheSim-python.git
-cd libCacheSim-python
-bash scripts/install_deps.sh
-
-# If you cannot install software directly (e.g., no sudo access)
-bash scripts/install_deps_user.sh
-```
-
-Then, you can reinstall libcachesim using the following commands (may need to add `--no-cache-dir` to force it to build from scratch):
-
-```bash
-# Enable LRB
-CMAKE_ARGS="-DENABLE_LRB=ON" uv pip install libcachesim
-# Enable ThreeLCache
-CMAKE_ARGS="-DENABLE_3L_CACHE=ON" uv pip install libcachesim
-# Enable GLCache
-CMAKE_ARGS="-DENABLE_GLCACHE=ON" uv pip install libcachesim
-```
+Visit our [documentation](https://cachemon.github.io/libCacheSim-python/getting_started/quickstart/) to learn more.
 
 ### Installation from sources
 
 If there are no wheels suitable for your environment, consider building from source.
 
 ```bash
+git clone https://github.com/cacheMon/libCacheSim-python.git
+cd libCacheSim-python
 bash scripts/install.sh
 ```
 
@@ -121,64 +81,6 @@ obj_miss_ratio, byte_miss_ratio = cache.process_trace(
     max_req=1000
 )
 print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
-```
-
-### Basic Usage
-
-```python
-import libcachesim as lcs
-
-# Create a cache
-cache = lcs.LRU(cache_size=1024*1024)  # 1MB cache
-
-# Process requests
-req = lcs.Request()
-req.obj_id = 1
-req.obj_size = 100
-
-print(cache.get(req))  # False (first access)
-print(cache.get(req))  # True (second access)
-```
-
-### Trace Analysis
-
-Here is an example demonstrating how to use `TraceAnalyzer`:
-
-```python
-import libcachesim as lcs
-
-# Step 1: Get one trace from S3 bucket
-URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
-dl = lcs.DataLoader()
-dl.load(URI)
-
-reader = lcs.TraceReader(
-    trace = dl.get_cache_path(URI),
-    trace_type = lcs.TraceType.ORACLE_GENERAL_TRACE,
-    reader_init_params = lcs.ReaderInitParam(ignore_obj_size=False)
-)
-
-analysis_option = lcs.AnalysisOption(
-        req_rate=True,  # Keep basic request rate analysis
-        access_pattern=False,  # Disable access pattern analysis
-        size=True,  # Keep size analysis
-        reuse=False,  # Disable reuse analysis for small datasets
-        popularity=False,  # Disable popularity analysis for small datasets (< 200 objects)
-        ttl=False,  # Disable TTL analysis
-        popularity_decay=False,  # Disable popularity decay analysis
-        lifetime=False,  # Disable lifetime analysis
-        create_future_reuse_ccdf=False,  # Disable experimental features
-        prob_at_age=False,  # Disable experimental features
-        size_change=False,  # Disable size change analysis
-    )
-
-analysis_param = lcs.AnalysisParam()
-
-analyzer = lcs.TraceAnalyzer(
-    reader, "example_analysis", analysis_option=analysis_option, analysis_param=analysis_param
-)
-
-analyzer.run()
 ```
 
 ## Plugin System
@@ -235,11 +137,10 @@ plugin_lru_cache = PluginCache(
     cache_name="Plugin_LRU",
 )
 
-reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1)
+reader = lcs.SyntheticReader(
+    num_objects=1000, num_of_req=10000, obj_size=1, alpha=1.0, dist="zipf"
+)
 req_miss_ratio, byte_miss_ratio = plugin_lru_cache.process_trace(reader)
-ref_req_miss_ratio, ref_byte_miss_ratio = LRU(128).process_trace(reader)
-print(f"plugin req miss ratio {req_miss_ratio}, ref req miss ratio {ref_req_miss_ratio}")
-print(f"plugin byte miss ratio {byte_miss_ratio}, ref byte miss ratio {ref_byte_miss_ratio}")
 ```
 
 By defining custom hook functions for cache initialization, hit, miss, eviction, removal, and cleanup, users can easily prototype and test their own cache eviction algorithms.
