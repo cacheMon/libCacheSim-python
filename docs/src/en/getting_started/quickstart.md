@@ -37,7 +37,7 @@ To enable them, you need to install all third-party dependencies first.
     bash scripts/install_deps_user.sh
     ```
 
-Then, you can reinstall libcachesim using the following commands:
+Then, you can reinstall libcachesim using the following commands (you may need to add `--no-cache-dir` to force it building from scratch):
 
 ```bash
 # Enable LRB
