@@ -169,7 +169,7 @@ class TraceReader(ReaderProtocol):
 
     def read_one_req(self) -> Request:
         req = Request()
-        ret = self._reader.read_one_req(req) # return 0 if success
+        ret = self._reader.read_one_req(req)  # return 0 if success
         if ret != 0:
             raise RuntimeError("Failed to read one request")
         return req

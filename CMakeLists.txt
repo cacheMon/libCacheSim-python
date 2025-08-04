@@ -12,9 +12,9 @@ endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # Options
-option(ENABLE_GLCACHE "Enable group-learned cache" ON)
-option(ENABLE_LRB "Enable LRB" ON)
-option(ENABLE_3L_CACHE "Enable 3LCache" ON)
+option(ENABLE_GLCACHE "Enable group-learned cache" OFF)
+option(ENABLE_LRB "Enable LRB" OFF)
+option(ENABLE_3L_CACHE "Enable 3LCache" OFF)
 
 # C++ standard
 set(CMAKE_CXX_STANDARD 17)

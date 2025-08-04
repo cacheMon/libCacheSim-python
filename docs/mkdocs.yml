@@ -9,17 +9,24 @@ docs_dir: src
 nav:
   - Home: 
     - libCacheSim Python: index.md
-  - Getting Started:
-    - Quick Start: quickstart.md
+    - Getting Started: 
+      - getting_started/quickstart.md
+      - getting_started/installation.md
+    - Examples: 
+      - examples/simulation.md
+      - examples/analysis.md
+      - examples/plugins.md
+  - User Guide:
+    - FAQ: faq.md
+  - Developer Guide:
+    - General: developer.md
   - API Reference:
     - API Documentation: api.md
-  - Examples:
-    - Usage Examples: examples.md
 
 theme:
   name: material
-  logo: assets/logos/logo-only-light.ico
-  favicon: assets/logos/logo-only-light.ico
+  # logo: assets/logos/logo-only-light.ico
+  # favicon: assets/logos/logo-only-light.ico
   language: en
   palette:
     # Palette toggle for automatic mode
@@ -77,7 +84,9 @@ plugins:
           build: true
           nav_translations:
             Home: 首页
-            Quick Start: 快速开始
+            Getting Started: 快速开始
+            User Guide: 用户指南
+            Developer Guide: 开发者指南
             API Reference: API参考
             Examples: 使用示例
 
