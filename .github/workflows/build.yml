@@ -43,13 +43,14 @@ jobs:
       - name: Build and test with uv
         run: |
           uv venv --python ${{ matrix.python-version }}
-          CMAKE_ARGS="-DENABLE_GLCACHE=OFF -DENABLE_LRB=OFF -DENABLE_3L_CACHE=OFF" uv pip install -e .[dev] -vvv
+          CMAKE_ARGS="-DENABLE_GLCACHE=ON -DENABLE_LRB=ON -DENABLE_3L_CACHE=ON" uv pip install -e .[dev] -vvv
           uv run python -c "import libcachesim; print('✓ Import successful for Python ${{ matrix.python-version }} on ${{ matrix.os }}')"
 
       - name: Run tests
         run: |
           if [ -d "tests" ]; then
-            uv run python -m pytest tests/ -v
+            uv run python -m pytest tests/ -v -m "not optional"
+            uv run python -m pytest tests/ -v -m "optional"
           else
             echo "No tests directory found, skipping tests"
           fi

@@ -1,68 +1,35 @@
-# libCacheSim Python Bindings
+# Welcome to libCacheSim Python
 
-Welcome to libCacheSim Python bindings! This is a high-performance cache simulation library with Python interface.
+!!! note
+    For convenience, we refer to the *libCacheSim Python Package* (this repo) as *libCacheSim* and the *C library* as *libCacheSim lib* in the following documentation.
 
-## Overview
+<figure markdown="span">
+  ![](../assets/logos/logo.jpg){ align="center" alt="libCacheSim Light" class="logo-light" width="60%" }
+</figure>
 
-libCacheSim is a high-performance cache simulation framework that supports various cache algorithms and trace formats. The Python bindings provide an easy-to-use interface for cache simulation, analysis, and research.
+<p style="text-align:center">
+A high-performance library for building and running cache simulations
+</strong>
+</p>
 
-## Key Features
+<p style="text-align:center">
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+<a class="github-button" href="https://github.com/cacheMon/libCacheSim-python" data-show-count="true" data-size="large" aria-label="Star">Star</a>
+<a class="github-button" href="https://github.com/cacheMon/libCacheSim-python/subscription" data-show-count="true" data-icon="octicon-eye" data-size="large" aria-label="Watch">Watch</a>
+<a class="github-button" href="https://github.com/cacheMon/libCacheSim-python/fork" data-show-count="true" data-icon="octicon-repo-forked" data-size="large" aria-label="Fork">Fork</a>
+</p>
 
-- **High Performance**: Built on top of the optimized C++ libCacheSim library
-- **Multiple Cache Algorithms**: Support for LRU, LFU, FIFO, ARC, Clock, S3FIFO, Sieve, and many more
-- **Trace Support**: Read various trace formats (CSV, binary, OracleGeneral, etc.)
-- **Synthetic Traces**: Generate synthetic workloads with Zipf and uniform distributions
-- **Analysis Tools**: Built-in trace analysis and cache performance evaluation
-- **Easy Integration**: Simple Python API for research and production use
+libCacheSim is an easy-to-use python binding of [libCachesim lib](https://github.com/1a1a11a/libCacheSim) for building and running cache simulations.
 
-## Quick Example
+libCacheSim is fast with the features from [underlying libCacheSim lib](https://github.com/1a1a11a/libCacheSim):
 
-```python
-import libcachesim as lcs
+- High performance - over 20M requests/sec for a realistic trace replay.
+- High memory efficiency - predictable and small memory footprint.
+- Parallelism out-of-the-box - uses the many CPU cores to speed up trace analysis and cache simulations.
 
-# Create a cache
-cache = lcs.LRU(cache_size=1024*1024)  # 1MB cache
+libCacheSim is flexible and easy to use with:
 
-# Generate synthetic trace
-reader = lcs.SyntheticReader(
-    num_of_req=10000,
-    obj_size=1024,
-    dist="zipf",
-    alpha=1.0
-)
-
-# Simulate cache behavior
-hit_count = 0
-for req in reader:
-    if cache.get(req):
-        hit_count += 1
-
-hit_ratio = hit_count / reader.get_num_of_req()
-print(f"Hit ratio: {hit_ratio:.4f}")
-```
-
-## Installation
-
-```bash
-pip install libcachesim
-```
-
-Or install from source:
-
-```bash
-git clone https://github.com/cacheMon/libCacheSim-python.git
-cd libCacheSim-python
-pip install -e .
-```
-
-## Getting Started
-
-Check out our [Quick Start Guide](quickstart.md) to begin using libCacheSim Python bindings, or explore the [API Reference](api.md) for detailed documentation.
-
-## Contributing
-
-We welcome contributions! Please see our [GitHub repository](https://github.com/cacheMon/libCacheSim-python) for more information.
-
-## License
-
-This project is licensed under the GPL-3.0 License.
+- Seamless integration with [open-source cache dataset](https://github.com/cacheMon/cache_dataset) consisting of thousands traces hosted on S3.
+- High-throughput simulation with the [underlying libCacheSim lib](https://github.com/1a1a11a/libCacheSim)
+- Detailed cache requests and other internal data control
+- Customized plugin cache development without any compilation

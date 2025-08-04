@@ -551,7 +551,7 @@ class ThreeLCache(CacheBase):
         try:
             from .libcachesim_python import ThreeLCache_init
         except ImportError:
-            raise ImportError("ThreeLCache is not installed. Please install it with `pip install libcachesim[all]`")
+            raise ImportError('ThreeLCache is not installed. Please install it with `CMAKE_ARGS="-DENABLE_3L_CACHE=ON" pip install libcachesim --force-reinstall`')
 
         cache_specific_params = f"objective={objective}"
         super().__init__(
@@ -592,7 +592,7 @@ class GLCache(CacheBase):
         try:
             from .libcachesim_python import GLCache_init
         except ImportError:
-            raise ImportError("GLCache is not installed. Please install it with `pip install libcachesim[all]`")
+            raise ImportError('GLCache is not installed. Please install it with `CMAKE_ARGS="-DENABLE_GLCACHE=ON" pip install libcachesim --force-reinstall`')
 
         cache_specific_params = f"segment-size={segment_size}, n-merge={n_merge}, type={type}, rank-intvl={rank_intvl}, merge-consecutive-segs={merge_consecutive_segs}, train-source-y={train_source_y}, retrain-intvl={retrain_intvl}"
         super().__init__(
@@ -621,7 +621,7 @@ class LRB(CacheBase):
         try:
             from .libcachesim_python import LRB_init
         except ImportError:
-            raise ImportError("LRB is not installed. Please install it with `pip install libcachesim[all]`")
+            raise ImportError('LRB is not installed. Please install it with `CMAKE_ARGS="-DENABLE_LRB=ON" pip install libcachesim --force-reinstall`')
 
         cache_specific_params = f"objective={objective}"
         super().__init__(

@@ -416,3 +416,27 @@ class TestCacheOperations:
         evict_obj = cache.to_evict(req)
         assert evict_obj is not None
         assert hasattr(evict_obj, 'obj_id')
+
+class TestCacheOptionalAlgorithms:
+    """Test optional algorithms"""
+
+    @pytest.mark.optional
+    def test_glcache(self):
+        """Test GLCache algorithm"""
+        from libcachesim import GLCache
+        cache = GLCache(1024)
+        assert cache is not None
+
+    @pytest.mark.optional
+    def test_lrb(self):
+        """Test LRB algorithm"""
+        from libcachesim import LRB
+        cache = LRB(1024)
+        assert cache is not None
+
+    @pytest.mark.optional
+    def test_3lcache(self):
+        """Test 3LCache algorithm"""
+        from libcachesim import ThreeLCache
+        cache = ThreeLCache(1024)
+        assert cache is not None

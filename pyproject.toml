@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "libcachesim"
-version = "0.3.3"
+version = "0.3.3.post2"
 description="Python bindings for libCacheSim"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -30,29 +30,14 @@ dependencies = [
   "pytest>=8.4.1",
 ]
 
+
 [project.optional-dependencies]
 test = ["pytest"]
-dev = [
-    "pytest",
-    "pre-commit",
-    "ruff>=0.7.0",
-    "mypy>=1.0.0",
-]
-all = [
-  "xgboost",
-  "lightgbm"
-]
+dev = ["pytest", "pre-commit", "ruff>=0.7.0", "mypy>=1.0.0"]
 
-
-[tool.scikit-build]
-wheel.expand-macos-universal-tags = true
-build-dir = "build"
-cmake.build-type = "Release"
-cmake.args = ["-G", "Ninja"]
-cmake.define = { CMAKE_OSX_DEPLOYMENT_TARGET = "14.0" }
-cmake.version = ">=3.15"
-cmake.source-dir = "."
-install.strip = false
+# ============================================================
+# pytest
+# ============================================================
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -71,6 +56,23 @@ python_files = ["test.py", "test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
+# ============================================================
+# scikit-build
+# ============================================================
+
+[tool.scikit-build]
+build-dir = "build"
+
+[tool.scikit-build.cmake]
+build-type = "Release"
+args = ["-G", "Ninja"]
+define = { CMAKE_OSX_DEPLOYMENT_TARGET = "14.0" }
+version = ">=3.15"
+source-dir = "."
+
+[tool.scikit-build.install]
+strip = false
+
 
 [tool.cibuildwheel]
 manylinux-x86_64-image = "quay.io/pypa/manylinux_2_34_x86_64"
@@ -80,7 +82,8 @@ build = ["cp39-*", "cp310-*", "cp311-*", "cp312-*", "cp313-*"]
 skip = ["*-win32", "*-manylinux_i686", "*-musllinux*", "pp*"]
 
 # Set the environment variable for the wheel build step.
-environment = { LCS_BUILD_DIR = "{project}/src/libCacheSim/build", MACOSX_DEPLOYMENT_TARGET = "14.0" }
+# NOTE(haocheng): we enable all the optional features for the wheel build.
+environment = { LCS_BUILD_DIR = "{project}/src/libCacheSim/build", MACOSX_DEPLOYMENT_TARGET = "14.0", CMAKE_ARGS = "-DENABLE_3L_CACHE=ON -DENABLE_GLCACHE=ON -DENABLE_LRB=ON" }
 
 # Test that the wheel can be imported
 test-command = "python -c 'import libcachesim; print(\"Import successful\")'"
