@@ -137,6 +137,8 @@ plugin_lru_cache = PluginCache(
     cache_name="Plugin_LRU",
 )
 
+import libcachesim as lcs
+
 reader = lcs.SyntheticReader(
     num_objects=1000, num_of_req=10000, obj_size=1, alpha=1.0, dist="zipf"
 )
