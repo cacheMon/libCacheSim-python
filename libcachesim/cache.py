@@ -284,6 +284,7 @@ class LIRS(CacheBase):
     def insert(self, req: Request) -> Optional[CacheObject]:
         return super().insert(req)
 
+
 class TwoQ(CacheBase):
     """2Q replacement algorithm
 
@@ -454,18 +455,24 @@ class BeladySize(CacheBase):
 
 class LRUProb(CacheBase):
     """LRU with Probabilistic Replacement
-    
+
     Special parameters:
     prob: probability of promoting an object to the head of the queue (default: 0.5)
     """
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False,
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
         prob: float = 0.5,
     ):
         cache_specific_params = f"prob={prob}"
         super().__init__(
-            _cache=LRU_Prob_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params)
+            _cache=LRU_Prob_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
+            )
         )
 
 
@@ -551,7 +558,9 @@ class ThreeLCache(CacheBase):
         try:
             from .libcachesim_python import ThreeLCache_init
         except ImportError:
-            raise ImportError('ThreeLCache is not installed. Please install it with `CMAKE_ARGS="-DENABLE_3L_CACHE=ON" pip install libcachesim --force-reinstall`')
+            raise ImportError(
+                'ThreeLCache is not installed. Please install it with `CMAKE_ARGS="-DENABLE_3L_CACHE=ON" pip install libcachesim --force-reinstall`'
+            )
 
         cache_specific_params = f"objective={objective}"
         super().__init__(
@@ -592,7 +601,9 @@ class GLCache(CacheBase):
         try:
             from .libcachesim_python import GLCache_init
         except ImportError:
-            raise ImportError('GLCache is not installed. Please install it with `CMAKE_ARGS="-DENABLE_GLCACHE=ON" pip install libcachesim --force-reinstall`')
+            raise ImportError(
+                'GLCache is not installed. Please install it with `CMAKE_ARGS="-DENABLE_GLCACHE=ON" pip install libcachesim --force-reinstall`'
+            )
 
         cache_specific_params = f"segment-size={segment_size}, n-merge={n_merge}, type={type}, rank-intvl={rank_intvl}, merge-consecutive-segs={merge_consecutive_segs}, train-source-y={train_source_y}, retrain-intvl={retrain_intvl}"
         super().__init__(
@@ -621,7 +632,9 @@ class LRB(CacheBase):
         try:
             from .libcachesim_python import LRB_init
         except ImportError:
-            raise ImportError('LRB is not installed. Please install it with `CMAKE_ARGS="-DENABLE_LRB=ON" pip install libcachesim --force-reinstall`')
+            raise ImportError(
+                'LRB is not installed. Please install it with `CMAKE_ARGS="-DENABLE_LRB=ON" pip install libcachesim --force-reinstall`'
+            )
 
         cache_specific_params = f"objective={objective}"
         super().__init__(

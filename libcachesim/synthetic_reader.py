@@ -90,7 +90,7 @@ class SyntheticReader(ReaderProtocol):
         req = Request()
         if self.current_pos >= self.num_of_req:
             req.valid = False
-            return req # return invalid request
+            return req  # return invalid request
 
         obj_id = self.obj_ids[self.current_pos]
         req.obj_id = obj_id
