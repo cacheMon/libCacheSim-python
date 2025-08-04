@@ -106,7 +106,7 @@ The `PluginCache` allows you to define custom caching behavior through Python ca
 from collections import OrderedDict
 from typing import Any
 
-from libcachesim import PluginCache, LRU, CommonCacheParams, Request
+from libcachesim import PluginCache, LRU, CommonCacheParams, Request, SyntheticReader
 
 def init_hook(_: CommonCacheParams) -> Any:
     return OrderedDict()
@@ -137,9 +137,7 @@ plugin_lru_cache = PluginCache(
     cache_name="Plugin_LRU",
 )
 
-import libcachesim as lcs
-
-reader = lcs.SyntheticReader(
+reader = SyntheticReader(
     num_objects=1000, num_of_req=10000, obj_size=1, alpha=1.0, dist="zipf"
 )
 req_miss_ratio, byte_miss_ratio = plugin_lru_cache.process_trace(reader)
