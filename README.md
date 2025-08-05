@@ -97,7 +97,7 @@ The `PluginCache` allows you to define custom caching behavior through Python ca
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `init_hook` | `((common_cache_params: CommonCacheParams)) -> Any` | Initialize your data structure |
+| `init_hook` | `(common_cache_params: CommonCacheParams) -> Any` | Initialize your data structure |
 | `hit_hook` | `(data: Any, request: Request) -> None` | Handle cache hits |
 | `miss_hook` | `(data: Any, request: Request) -> None` | Handle cache misses |
 | `eviction_hook` | `(data: Any, request: Request) -> int` | Return object ID to evict |
