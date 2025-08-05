@@ -77,7 +77,7 @@ With libcachesim installed, you can start cache simulation for some eviction alg
     req_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
     print(f"Request miss ratio: {req_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
 
-    # Step 3.1: Further process the first 1000 requests again
+    # Step 3.1: Process the first 1000 requests
     cache = lcs.S3FIFO(
         cache_size=1024 * 1024,
         # Cache specific parameters

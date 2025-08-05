@@ -21,6 +21,13 @@ cache = lcs.S3FIFO(
 req_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
 print(f"Request miss ratio: {req_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
 
-# Step 3.1: Further process the first 1000 requests again
+# Step 3.1: Process the first 1000 requests
+cache = lcs.S3FIFO(
+    cache_size=1024 * 1024,
+    # Cache specific parameters
+    small_size_ratio=0.2,
+    ghost_size_ratio=0.8,
+    move_to_main_threshold=2,
+)
 req_miss_ratio, byte_miss_ratio = cache.process_trace(reader, start_req=0, max_req=1000)
 print(f"Request miss ratio: {req_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
