@@ -1,12 +1,15 @@
-"""Wrapper of Reader"""
+"""Wrapper of Reader with S3 support."""
 
 import logging
 from typing import overload, Union, Optional
 from collections.abc import Iterator
+from urllib.parse import urlparse
 
 from .protocols import ReaderProtocol
-
 from .libcachesim_python import TraceType, SamplerType, Request, ReaderInitParam, Reader, Sampler, ReadDirection
+from ._s3_cache import get_data_loader
+
+logger = logging.getLogger(__name__)
 
 
 class TraceReader(ReaderProtocol):
@@ -28,6 +31,10 @@ class TraceReader(ReaderProtocol):
             self._reader = trace
             return
 
+        # Handle S3 URIs
+        if isinstance(trace, str) and trace.startswith("s3://"):
+            trace = self._resolve_s3_path(trace)
+
         if reader_init_params is None:
             reader_init_params = ReaderInitParam()
 
@@ -35,6 +42,74 @@ class TraceReader(ReaderProtocol):
             raise TypeError("reader_init_params must be an instance of ReaderInitParam")
 
         self._reader = Reader(trace, trace_type, reader_init_params)
+
+    def _validate_s3_uri(self, s3_uri: str) -> tuple[str, str]:
+        """
+        Validate and parse S3 URI.
+
+        Args:
+            s3_uri: S3 URI like "s3://bucket/key"
+
+        Returns:
+            Tuple of (bucket, key)
+
+        Raises:
+            ValueError: If URI is invalid
+        """
+        parsed = urlparse(s3_uri)
+
+        if parsed.scheme != "s3":
+            raise ValueError(f"Invalid S3 URI scheme. Expected 's3', got '{parsed.scheme}': {s3_uri}")
+
+        if not parsed.netloc:
+            raise ValueError(f"Missing bucket name in S3 URI: {s3_uri}")
+
+        bucket = parsed.netloc
+        key = parsed.path.lstrip("/")
+
+        if not key:
+            raise ValueError(f"Missing key (object path) in S3 URI: {s3_uri}")
+
+        # Check for path traversal in the key part only
+        if ".." in key:
+            raise ValueError(f"S3 key contains path traversal patterns: {key}")
+
+        # Check for double slashes in the key part (after s3://)
+        if "//" in key:
+            raise ValueError(f"S3 key contains double slashes: {key}")
+
+        # Check for backslashes (not valid in URLs)
+        if "\\" in s3_uri:
+            raise ValueError(f"S3 URI contains backslashes: {s3_uri}")
+
+        return bucket, key
+
+    def _resolve_s3_path(self, s3_path: str) -> str:
+        """
+        Resolve S3 path to local cached file path.
+
+        Args:
+            s3_path: S3 URI like "s3://bucket/key"
+
+        Returns:
+            Local file path
+        """
+        try:
+            bucket, key = self._validate_s3_uri(s3_path)
+        except ValueError as e:
+            raise ValueError(f"Invalid S3 URI: {e}")
+
+        # Get data loader for this bucket
+        try:
+            loader = get_data_loader(bucket)
+        except ValueError as e:
+            raise ValueError(f"Invalid bucket name '{bucket}': {e}")
+
+        logger.info(f"Resolving S3 path: {s3_path}")
+        try:
+            return loader.get_cached_path(key)
+        except ValueError as e:
+            raise ValueError(f"Invalid S3 key '{key}': {e}")
 
     @property
     def n_read_req(self) -> int:

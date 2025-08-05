@@ -59,7 +59,6 @@ from .trace_reader import TraceReader
 from .trace_analyzer import TraceAnalyzer
 from .synthetic_reader import SyntheticReader, create_zipf_requests, create_uniform_requests
 from .util import Util
-from .data_loader import DataLoader
 
 __all__ = [
     # Core classes
@@ -118,8 +117,6 @@ __all__ = [
     "create_uniform_requests",
     # Utilities
     "Util",
-    # Data loader
-    "DataLoader",
     # Metadata
     "__doc__",
     "__version__",

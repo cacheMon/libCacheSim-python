@@ -1,4 +1,4 @@
-from libcachesim import TraceAnalyzer, TraceReader, DataLoader, AnalysisOption, AnalysisParam
+from libcachesim import TraceAnalyzer, TraceReader, AnalysisOption, AnalysisParam
 import os
 import pytest
 
@@ -9,13 +9,8 @@ def test_analyzer_common():
     """
 
     # Add debugging and error handling
-    loader = DataLoader()
-    loader.load("cache_dataset_oracleGeneral/2020_tencentBlock/1K/tencentBlock_1621.oracleGeneral.zst")
-    file_path = loader.get_cache_path(
-        "cache_dataset_oracleGeneral/2020_tencentBlock/1K/tencentBlock_1621.oracleGeneral.zst"
-    )
-
-    reader = TraceReader(file_path)
+    URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
+    reader = TraceReader(trace=URI)
 
     # For this specific small dataset (only 4 objects), configure analysis options more conservatively
     # to avoid bounds issues with the analysis modules
