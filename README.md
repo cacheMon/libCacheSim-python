@@ -151,9 +151,9 @@ By defining custom hook functions for cache initialization, hit, miss, eviction,
 
 ### Getting Help
 
-- Check [project documentation](docs.libcachesim.com/python) for detailed guides
-- Open issues on [GitHub](https://github.com/cacheMon/libCacheSim-python/issues)
-- Review [examples](/example) in the main repository
+- Check [project documentation](https://docs.libcachesim.com/python) for detailed guides
+- Open issues on [GitHub](https://github.com/cacheMon/libCacheSim-python/issues/new/choose)
+- Review [examples](/examples) in the main repository
 
 ---
 ## Reference
