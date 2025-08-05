@@ -7,8 +7,8 @@ This module tests both TraceReader and SyntheticReader functionality.
 import pytest
 import tempfile
 import os
-from libcachesim import TraceReader, SyntheticReader, DataLoader
-from libcachesim.libcachesim_python import TraceType, SamplerType, Request, ReqOp, ReaderInitParam, Sampler
+from libcachesim import TraceReader, SyntheticReader
+from libcachesim.libcachesim_python import TraceType, SamplerType, Request, ReaderInitParam, Sampler
 
 
 class TestSyntheticReader:
@@ -330,6 +330,14 @@ class TestTraceReader:
 
         finally:
             os.unlink(temp_file)
+    
+    def test_trace_reader_s3(self):
+        """Test trace reader with S3"""
+        URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
+        reader = TraceReader(trace=URI)
+        for req in reader:
+            assert req.valid == True
+            break
 
 
 class TestReaderCompatibility:
