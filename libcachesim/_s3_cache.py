@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class _DataLoader:
     """Internal S3 data loader with local caching."""
-    
+
     DEFAULT_BUCKET = "cache-datasets"
     DEFAULT_CACHE_DIR = Path(os.environ.get("LCS_HUB_CACHE", Path.home() / ".cache/libcachesim/hub"))
 
@@ -24,9 +24,28 @@ class _DataLoader:
     INVALID_CHARS = set('<>:"|?*\x00')
     # Reserved names on Windows
     RESERVED_NAMES = {
-        'CON', 'PRN', 'AUX', 'NUL',
-        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
     }
 
     def __init__(
@@ -42,65 +61,65 @@ class _DataLoader:
         """Validate S3 bucket name according to AWS rules."""
         if not bucket_name:
             raise ValueError("Bucket name cannot be empty")
-        
+
         if len(bucket_name) < 3 or len(bucket_name) > 63:
             raise ValueError("Bucket name must be between 3 and 63 characters")
-        
-        if not re.match(r'^[a-z0-9.-]+$', bucket_name):
+
+        if not re.match(r"^[a-z0-9.-]+$", bucket_name):
             raise ValueError("Bucket name can only contain lowercase letters, numbers, periods, and hyphens")
-        
-        if bucket_name.startswith('.') or bucket_name.endswith('.'):
+
+        if bucket_name.startswith(".") or bucket_name.endswith("."):
             raise ValueError("Bucket name cannot start or end with a period")
-        
-        if bucket_name.startswith('-') or bucket_name.endswith('-'):
+
+        if bucket_name.startswith("-") or bucket_name.endswith("-"):
             raise ValueError("Bucket name cannot start or end with a hyphen")
-        
-        if '..' in bucket_name:
+
+        if ".." in bucket_name:
             raise ValueError("Bucket name cannot contain consecutive periods")
-        
+
         return bucket_name
 
     def _validate_and_sanitize_key(self, key: str) -> str:
         """Validate and sanitize S3 key for safe local filesystem usage."""
         if not key:
             raise ValueError("S3 key cannot be empty")
-        
+
         if len(key) > 1024:  # S3 limit is 1024 bytes
             raise ValueError("S3 key is too long (max 1024 characters)")
-        
+
         # Check for path traversal attempts
-        if '..' in key:
+        if ".." in key:
             raise ValueError("S3 key cannot contain '..' (path traversal not allowed)")
-        
-        if key.startswith('/'):
+
+        if key.startswith("/"):
             raise ValueError("S3 key cannot start with '/'")
-        
+
         # Split key into parts and validate each part
-        parts = key.split('/')
+        parts = key.split("/")
         sanitized_parts = []
-        
+
         for part in parts:
             if not part:  # Empty part (double slash)
                 continue
-                
+
             # Check for reserved names (case insensitive)
             if part.upper() in self.RESERVED_NAMES:
                 raise ValueError(f"S3 key contains reserved name: {part}")
-            
+
             # Check for invalid characters
             if any(c in self.INVALID_CHARS for c in part):
                 raise ValueError(f"S3 key contains invalid characters in part: {part}")
-            
+
             # Check if part is too long for filesystem
             if len(part) > 255:  # Most filesystems have 255 char limit per component
                 raise ValueError(f"S3 key component too long: {part}")
-            
+
             sanitized_parts.append(part)
-        
+
         if not sanitized_parts:
             raise ValueError("S3 key resulted in empty path after sanitization")
-        
-        return '/'.join(sanitized_parts)
+
+        return "/".join(sanitized_parts)
 
     def _ensure_cache_dir(self) -> None:
         (self.cache_dir / self.bucket_name).mkdir(parents=True, exist_ok=True)
@@ -114,10 +133,11 @@ class _DataLoader:
             # Fallback for Windows or other systems
             try:
                 import shutil
+
                 return shutil.disk_usage(path).free
             except Exception:
                 logger.warning("Could not determine available disk space")
-                return float('inf')  # Assume unlimited space if we can't check
+                return float("inf")  # Assume unlimited space if we can't check
 
     @property
     def s3_client(self):
@@ -138,20 +158,20 @@ class _DataLoader:
         """Create cache path that mirrors S3 structure after validation."""
         sanitized_key = self._validate_and_sanitize_key(key)
         cache_path = self.cache_dir / self.bucket_name / sanitized_key
-        
+
         # Double-check that the resolved path is still within cache directory
         try:
             cache_path.resolve().relative_to(self.cache_dir.resolve())
         except ValueError:
             raise ValueError(f"S3 key resolves outside cache directory: {key}")
-        
+
         return cache_path
 
     def _get_object_size(self, key: str) -> int:
         """Get the size of an S3 object without downloading it."""
         try:
             response = self.s3_client.head_object(Bucket=self.bucket_name, Key=key)
-            return response['ContentLength']
+            return response["ContentLength"]
         except Exception as e:
             logger.warning(f"Could not determine object size for s3://{self.bucket_name}/{key}: {e}")
             return 0
@@ -254,10 +274,10 @@ _data_loader = _DataLoader()
 def set_cache_dir(cache_dir: Union[str, Path]) -> None:
     """
     Set the global cache directory for S3 downloads.
-    
+
     Args:
         cache_dir: Path to the cache directory
-        
+
     Example:
         >>> import libcachesim as lcs
         >>> lcs.set_cache_dir("/tmp/my_cache")
@@ -269,10 +289,10 @@ def set_cache_dir(cache_dir: Union[str, Path]) -> None:
 def get_cache_dir() -> Path:
     """
     Get the current cache directory.
-    
+
     Returns:
         Path to the current cache directory
-        
+
     Example:
         >>> import libcachesim as lcs
         >>> print(lcs.get_cache_dir())
@@ -284,10 +304,10 @@ def get_cache_dir() -> Path:
 def clear_cache(s3_path: Optional[str] = None) -> None:
     """
     Clear cached files.
-    
+
     Args:
         s3_path: Specific S3 path to clear, or None to clear all cache
-        
+
     Example:
         >>> import libcachesim as lcs
         >>> # Clear specific file
@@ -298,7 +318,7 @@ def clear_cache(s3_path: Optional[str] = None) -> None:
     if s3_path and s3_path.startswith("s3://"):
         parsed = urlparse(s3_path)
         bucket = parsed.netloc
-        key = parsed.path.lstrip('/')
+        key = parsed.path.lstrip("/")
         if bucket == _data_loader.bucket_name:
             _data_loader.clear_cache(key)
         else:
@@ -310,10 +330,10 @@ def clear_cache(s3_path: Optional[str] = None) -> None:
 def get_cache_size() -> int:
     """
     Get total size of cached files in bytes.
-    
+
     Returns:
         Total cache size in bytes
-        
+
     Example:
         >>> import libcachesim as lcs
         >>> size_mb = lcs.get_cache_size() / (1024**2)
@@ -325,10 +345,10 @@ def get_cache_size() -> int:
 def list_cached_files() -> list[str]:
     """
     List all cached files.
-    
+
     Returns:
         List of cached file paths
-        
+
     Example:
         >>> import libcachesim as lcs
         >>> files = lcs.list_cached_files()

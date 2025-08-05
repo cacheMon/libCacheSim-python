@@ -330,7 +330,7 @@ class TestTraceReader:
 
         finally:
             os.unlink(temp_file)
-    
+
     def test_trace_reader_s3(self):
         """Test trace reader with S3"""
         URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
