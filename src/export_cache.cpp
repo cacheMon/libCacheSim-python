@@ -292,6 +292,9 @@ void export_cache(py::module& m) {
             if (obj == LHD_HIT_MARKER) {
               cache_obj_t* dummy_obj =
                   static_cast<cache_obj_t*>(calloc(1, sizeof(cache_obj_t)));
+              if (dummy_obj == nullptr) {
+                throw std::bad_alloc();
+              }
               dummy_obj->obj_id = req.obj_id;
               dummy_obj->obj_size = req.obj_size;
               return py::cast(
