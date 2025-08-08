@@ -6,6 +6,7 @@ from .libcachesim_python import (
     CacheObject,
     Cache,
     # Core cache algorithms
+    LHD_init,
     LRU_init,
     FIFO_init,
     LFU_init,
@@ -152,6 +153,17 @@ def _create_common_params(
 # ------------------------------------------------------------------------------------------------
 # Core cache algorithms
 # ------------------------------------------------------------------------------------------------
+class LHD(CacheBase):
+    """Least Hit Density cache (no special parameters)"""
+
+    def __init__(
+        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+    ):
+        super().__init__(
+            _cache=LHD_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+        )
+
+
 class LRU(CacheBase):
     """Least Recently Used cache (no special parameters)"""
 
