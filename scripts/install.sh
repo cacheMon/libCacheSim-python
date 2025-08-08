@@ -6,7 +6,7 @@ function usage() {
     echo "Options:"
     echo "  -h, --help    Show this help message"
     echo "  -b, --build-wheels   Build the Python wheels"
-    echo "  -a, --all   Build the Python wheels with optional dependencies"
+    echo "  -a, --all   Install with optional dependencies for development"
     exit 1
 }
 # Parse command line arguments
