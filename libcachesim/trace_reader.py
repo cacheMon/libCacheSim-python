@@ -276,7 +276,7 @@ class TraceReader(ReaderProtocol):
     def set_read_pos(self, pos: float) -> None:
         self._reader.set_read_pos(pos)
 
-    def get_working_set_size(self) -> Tuple[int, int]:
+    def get_working_set_size(self) -> tuple[int, int]:
         return cal_working_set_size(self._reader)
 
     def __iter__(self) -> Iterator[Request]:
