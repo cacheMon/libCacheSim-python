@@ -181,6 +181,15 @@ class SyntheticReader(ReaderProtocol):
     def get_read_pos(self) -> float:
         """Get current read position"""
         return float(self.current_pos)
+    
+    def get_working_set_size(self) -> tuple[int, int]:
+        """Calculate working set size"""
+        wss_obj, wss_byte = 0, 0
+        if self._obj_ids is not None:
+            unique_ids = np.unique(self._obj_ids[:self.current_pos])
+            wss_obj = len(unique_ids)
+            wss_byte = wss_obj * self.obj_size
+        return wss_obj, wss_byte
 
     def __iter__(self) -> Iterator[Request]:
         """Iterator implementation"""

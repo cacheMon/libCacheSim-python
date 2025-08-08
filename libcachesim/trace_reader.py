@@ -1,12 +1,12 @@
 """Wrapper of Reader with S3 support."""
 
 import logging
-from typing import overload, Union, Optional
+from typing import Tuple, overload, Union, Optional
 from collections.abc import Iterator
 from urllib.parse import urlparse
 
 from .protocols import ReaderProtocol
-from .libcachesim_python import TraceType, SamplerType, Request, ReaderInitParam, Reader, Sampler, ReadDirection
+from .libcachesim_python import TraceType, SamplerType, Request, ReaderInitParam, Reader, Sampler, ReadDirection, cal_working_set_size
 from ._s3_cache import get_data_loader
 
 logger = logging.getLogger(__name__)
@@ -275,6 +275,9 @@ class TraceReader(ReaderProtocol):
 
     def set_read_pos(self, pos: float) -> None:
         self._reader.set_read_pos(pos)
+
+    def get_working_set_size(self) -> Tuple[int, int]:
+        return cal_working_set_size(self._reader)
 
     def __iter__(self) -> Iterator[Request]:
         self._reader.reset()
