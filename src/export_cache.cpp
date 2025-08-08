@@ -28,6 +28,8 @@ namespace libcachesim {
 
 namespace py = pybind11;
 
+const cache_obj_t* LHD_HIT_MARKER = reinterpret_cast<cache_obj_t *>(0x1);
+
 // Custom deleters for smart pointers
 struct CacheDeleter {
   void operator()(cache_t* ptr) const {
@@ -286,11 +288,11 @@ void export_cache(py::module& m) {
                 return py::none();
             }
             // NOTE(haocheng): For LHD only, return a dummy object for hit
-            if (obj == reinterpret_cast<cache_obj_t *>(0x1)) {
-                cache_obj_t* obj = new cache_obj_t();
-                obj->obj_id = req.obj_id;
-                obj->obj_size = req.obj_size;
-                return py::cast(std::unique_ptr<cache_obj_t, CacheObjectDeleter>(obj));
+            if (obj == LHD_HIT_MARKER) {
+                cache_obj_t* dummy_obj = static_cast<cache_obj_t*>(calloc(1, sizeof(cache_obj_t)));
+                dummy_obj->obj_id = req.obj_id;
+                dummy_obj->obj_size = req.obj_size;
+                return py::cast(std::unique_ptr<cache_obj_t, CacheObjectDeleter>(dummy_obj));
             }
             return py::cast(obj, py::return_value_policy::reference);
           },
