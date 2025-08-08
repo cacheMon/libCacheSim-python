@@ -1,7 +1,7 @@
 """Wrapper of Reader with S3 support."""
 
 import logging
-from typing import Tuple, overload, Union, Optional
+from typing import overload, Union, Optional
 from collections.abc import Iterator
 from urllib.parse import urlparse
 
