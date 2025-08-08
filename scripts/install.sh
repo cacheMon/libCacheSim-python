@@ -52,7 +52,7 @@ python -c "import libcachesim"
 # Run tests
 python -m pip install pytest
 python -m pytest tests
-if [[ $CMAKE_ARGS == "-DENABLE_LRB=ON -DENABLE_GLCACHE=ON -DENABLE_3L_CACHE=ON" ]]; then
+if [[ "$CMAKE_ARGS" == *"-DENABLE_LRB=ON"* && "$CMAKE_ARGS" == *"-DENABLE_GLCACHE=ON"* && "$CMAKE_ARGS" == *"-DENABLE_3L_CACHE=ON"* ]]; then
     echo "Running tests for optional eviction algos..."
     python -m pytest tests -m "optional"
 fi
