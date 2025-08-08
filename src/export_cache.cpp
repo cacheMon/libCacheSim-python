@@ -28,7 +28,7 @@ namespace libcachesim {
 
 namespace py = pybind11;
 
-const cache_obj_t* LHD_HIT_MARKER = reinterpret_cast<cache_obj_t *>(0x1);
+const cache_obj_t* LHD_HIT_MARKER = reinterpret_cast<cache_obj_t*>(0x1);
 
 // Custom deleters for smart pointers
 struct CacheDeleter {
@@ -258,7 +258,7 @@ auto make_cache_wrapper(const std::string& fn_name) {
           cache_t* ptr = InitFn(cc_params, params_cstr);
           return std::unique_ptr<cache_t, CacheDeleter>(ptr);
         },
-        "cc_params"_a, "cache_specific_params"_a = ""); 
+        "cc_params"_a, "cache_specific_params"_a = "");
   };
 }
 
@@ -281,18 +281,21 @@ void export_cache(py::module& m) {
           "req"_a)
       .def(
           "find",
-          [](cache_t& self, const request_t& req, const bool update_cache) -> py::object {
+          [](cache_t& self, const request_t& req,
+             const bool update_cache) -> py::object {
             cache_obj_t* obj = self.find(&self, &req, update_cache);
             // Return None if obj is null (not found)
             if (obj == nullptr) {
-                return py::none();
+              return py::none();
             }
             // NOTE(haocheng): For LHD only, return a dummy object for hit
             if (obj == LHD_HIT_MARKER) {
-                cache_obj_t* dummy_obj = static_cast<cache_obj_t*>(calloc(1, sizeof(cache_obj_t)));
-                dummy_obj->obj_id = req.obj_id;
-                dummy_obj->obj_size = req.obj_size;
-                return py::cast(std::unique_ptr<cache_obj_t, CacheObjectDeleter>(dummy_obj));
+              cache_obj_t* dummy_obj =
+                  static_cast<cache_obj_t*>(calloc(1, sizeof(cache_obj_t)));
+              dummy_obj->obj_id = req.obj_id;
+              dummy_obj->obj_size = req.obj_size;
+              return py::cast(
+                  std::unique_ptr<cache_obj_t, CacheObjectDeleter>(dummy_obj));
             }
             return py::cast(obj, py::return_value_policy::reference);
           },
@@ -303,23 +306,25 @@ void export_cache(py::module& m) {
             return self.can_insert(&self, &req);
           },
           "req"_a)
-          .def(
-            "insert",
-            [](cache_t& self, const request_t& req) -> std::optional<cache_obj_t*> {
-              cache_obj_t* inserted = self.insert(&self, &req);
-              if (inserted == nullptr) {
-                return std::nullopt;
-              }
-              return inserted;
-            },
-            "req"_a,
-            py::return_value_policy::reference  // optional still respected
-        )
-        
+      .def(
+          "insert",
+          [](cache_t& self,
+             const request_t& req) -> std::optional<cache_obj_t*> {
+            cache_obj_t* inserted = self.insert(&self, &req);
+            if (inserted == nullptr) {
+              return std::nullopt;
+            }
+            return inserted;
+          },
+          "req"_a,
+          py::return_value_policy::reference  // optional still respected
+          )
+
       .def(
           "need_eviction",
           [](cache_t& self, const request_t& req) {
-            return self.get_occupied_byte(&self) + req.obj_size > self.cache_size;
+            return self.get_occupied_byte(&self) + req.obj_size >
+                   self.cache_size;
           },
           "req"_a)
       .def(
@@ -370,7 +375,8 @@ void export_cache(py::module& m) {
              params->default_ttl = default_ttl;
              params->hashpower = hashpower;
              params->consider_obj_metadata = consider_obj_metadata;
-             return std::unique_ptr<common_cache_params_t, CommonCacheParamsDeleter>(params);
+             return std::unique_ptr<common_cache_params_t,
+                                    CommonCacheParamsDeleter>(params);
            }),
            "cache_size"_a, "default_ttl"_a = 86400 * 300, "hashpower"_a = 24,
            "consider_obj_metadata"_a = false)

@@ -6,7 +6,16 @@ from collections.abc import Iterator
 from urllib.parse import urlparse
 
 from .protocols import ReaderProtocol
-from .libcachesim_python import TraceType, SamplerType, Request, ReaderInitParam, Reader, Sampler, ReadDirection, cal_working_set_size
+from .libcachesim_python import (
+    TraceType,
+    SamplerType,
+    Request,
+    ReaderInitParam,
+    Reader,
+    Sampler,
+    ReadDirection,
+    cal_working_set_size,
+)
 from ._s3_cache import get_data_loader
 
 logger = logging.getLogger(__name__)

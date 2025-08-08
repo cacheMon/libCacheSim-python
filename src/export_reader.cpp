@@ -61,14 +61,16 @@ struct SamplerDeleter {
   }
 };
 
-
 void export_reader(py::module& m) {
   /* Helper function(s) */
-  m.def("cal_working_set_size", [](reader_t& reader) {
-    int64_t wss_obj = 0, wss_byte = 0;
-    cal_working_set_size(&reader, &wss_obj, &wss_byte);
-    return std::make_tuple(wss_obj, wss_byte);
-  }, "reader"_a);
+  m.def(
+      "cal_working_set_size",
+      [](reader_t& reader) {
+        int64_t wss_obj = 0, wss_byte = 0;
+        cal_working_set_size(&reader, &wss_obj, &wss_byte);
+        return std::make_tuple(wss_obj, wss_byte);
+      },
+      "reader"_a);
 
   // Sampler type enumeration
   py::enum_<sampler_type>(m, "SamplerType")
