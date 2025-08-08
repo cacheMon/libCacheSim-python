@@ -6,10 +6,12 @@ function usage() {
     echo "Options:"
     echo "  -h, --help    Show this help message"
     echo "  -b, --build-wheels   Build the Python wheels"
+    echo "  -a, --all   Build the Python wheels with optional dependencies"
     exit 1
 }
 # Parse command line arguments
 BUILD_WHEELS=0
+CMAKE_ARGS=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -18,6 +20,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -b|--build-wheels)
             BUILD_WHEELS=1
+            shift
+            ;;
+        -a|--all)
+            CMAKE_ARGS="-DENABLE_LRB=ON -DENABLE_GLCACHE=ON -DENABLE_3L_CACHE=ON"
+            BUILD_WHEELS=0
             shift
             ;;
         *)
@@ -36,7 +43,7 @@ if [ $? -ne 0 ]; then
 fi
 
 python scripts/sync_version.py
-python -m pip install -e . -vvv
+CMAKE_ARGS=$CMAKE_ARGS python -m pip install -e . -vvv
 
 # Test that the import works
 echo "Testing import..."
@@ -45,6 +52,10 @@ python -c "import libcachesim"
 # Run tests
 python -m pip install pytest
 python -m pytest tests
+if [[ $CMAKE_ARGS == "-DENABLE_LRB=ON -DENABLE_GLCACHE=ON -DENABLE_3L_CACHE=ON" ]]; then
+    echo "Running tests for optional eviction algos..."
+    python -m pytest tests -m "optional"
+fi
 
 # Build wheels if requested
 if [[ $BUILD_WHEELS -eq 1 ]]; then

@@ -271,9 +271,7 @@ void export_reader(py::module& m) {
           "read_one_req",
           [](reader_t& self, request_t& req) {
             int ret = read_one_req(&self, &req);
-            if (ret != 0) {
-              throw std::runtime_error("Failed to read request");
-            }
+            // NOTE: If read successfully, it returns 0.
             return ret;
           },
           "req"_a)
