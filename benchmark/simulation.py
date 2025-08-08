@@ -8,19 +8,20 @@ import libcachesim as lcs
 import os
 import sys
 import tracemalloc
-from time import perf_counter
+from time import perf_counter, sleep
 import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 import statistics
 import psutil
 import logging
-from typing import List, Tuple, Dict, Any
+import threading
+from typing import List, Tuple, Dict, Any, Optional
 from dataclasses import dataclass
 
-# Configuration
-NUM_ITERATIONS = 20
-CACHE_SIZE_RATIO = 0.1
+# Default configuration
+DEFAULT_NUM_ITERATIONS = 20
+DEFAULT_CACHE_SIZE_RATIO = 0.1
 
 @dataclass
 class BenchmarkResult:
@@ -48,18 +49,60 @@ class BenchmarkResult:
     
     @property
     def mean_memory(self) -> float:
-        return statistics.mean(self.memory_usage)
+        return statistics.mean(self.memory_usage) if self.memory_usage else 0.0
     
     @property
     def mean_miss_ratio(self) -> float:
         return statistics.mean(self.miss_ratios)
 
+class SubprocessMemoryMonitor:
+    """Monitor memory usage of a subprocess."""
+    
+    def __init__(self, pid: int):
+        self.pid = pid
+        self.peak_memory = 0.0
+        self.monitoring = False
+        self.monitor_thread = None
+    
+    def start_monitoring(self):
+        """Start monitoring memory usage in a separate thread."""
+        self.monitoring = True
+        self.monitor_thread = threading.Thread(target=self._monitor_memory)
+        self.monitor_thread.daemon = True
+        self.monitor_thread.start()
+    
+    def stop_monitoring(self) -> float:
+        """Stop monitoring and return peak memory usage in MB."""
+        self.monitoring = False
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=1.0)
+        return self.peak_memory
+    
+    def _monitor_memory(self):
+        """Monitor memory usage of the subprocess."""
+        try:
+            process = psutil.Process(self.pid)
+            while self.monitoring:
+                try:
+                    memory_info = process.memory_info()
+                    current_memory = memory_info.rss / 1024 / 1024  # Convert to MB
+                    self.peak_memory = max(self.peak_memory, current_memory)
+                    sleep(0.01)  # Sample every 10ms
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    # Process ended or access denied
+                    break
+        except psutil.NoSuchProcess:
+            # Process doesn't exist
+            pass
+
 class CacheSimulationBenchmark:
     """Comprehensive benchmark for cache simulation performance."""
     
-    def __init__(self, trace_path: str, num_iterations: int = NUM_ITERATIONS):
+    def __init__(self, trace_path: str, num_iterations: int = DEFAULT_NUM_ITERATIONS, 
+                 cache_size_ratio: float = DEFAULT_CACHE_SIZE_RATIO):
         self.trace_path = trace_path
         self.num_iterations = num_iterations
+        self.cache_size_ratio = cache_size_ratio
         self.results: Dict[str, BenchmarkResult] = {}
         self.logger = self._setup_logging()
         
@@ -80,28 +123,66 @@ class CacheSimulationBenchmark:
         process = psutil.Process(os.getpid())
         return process.memory_info().rss / 1024 / 1024
     
+    def _find_cachesim_binary(self) -> Optional[str]:
+        """Find the cachesim binary in common locations."""
+        possible_paths = [
+            "./src/libCacheSim/build/bin/cachesim",
+            "./build/bin/cachesim",
+            "../build/bin/cachesim",
+            "cachesim"
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+            elif path == "cachesim":
+                # Check if it's in PATH
+                try:
+                    result = subprocess.run(["which", "cachesim"], 
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        return "cachesim"
+                except FileNotFoundError:
+                    # 'which' command not available (e.g., on Windows)
+                    pass
+        
+        return None
+    
+    def _parse_native_c_output(self, output: str) -> float:
+        """Parse miss ratio from native C binary output."""
+        try:
+            for line in output.split('\n'):
+                line = line.strip()
+                if 'miss ratio' in line.lower():
+                    # Try to extract the last number from the line
+                    parts = line.split()
+                    for part in reversed(parts):
+                        try:
+                            return float(part.rstrip('%,.:'))
+                        except ValueError:
+                            continue
+                # Alternative patterns
+                elif 'miss rate' in line.lower():
+                    parts = line.split()
+                    for part in reversed(parts):
+                        try:
+                            return float(part.rstrip('%,.:'))
+                        except ValueError:
+                            continue
+        except (ValueError, IndexError, AttributeError) as e:
+            self.logger.warning(f"Could not parse miss ratio from native C output: {e}")
+        
+        return 0.0  # Default value if parsing fails
+    
     def _benchmark_native_c(self) -> BenchmarkResult:
-        """Benchmark native C binary execution."""
+        """Benchmark native C binary execution with proper subprocess memory monitoring."""
         self.logger.info("Benchmarking native C binary...")
         
         execution_times = []
         memory_usage = []
         miss_ratios = []
         
-        # Try to find the cachesim binary
-        possible_paths = [
-            "./src/libCacheSim/build/bin/cachesim",
-            "./build/bin/cachesim",
-            "cachesim"
-        ]
-        
-        cachesim_path = None
-        for path in possible_paths:
-            if os.path.exists(path) or subprocess.run(["which", path.split('/')[-1]], 
-                                                     capture_output=True).returncode == 0:
-                cachesim_path = path
-                break
-        
+        cachesim_path = self._find_cachesim_binary()
         if not cachesim_path:
             self.logger.warning("Native C binary not found, skipping native benchmark")
             return BenchmarkResult("Native C", [], [], [])
@@ -109,39 +190,43 @@ class CacheSimulationBenchmark:
         for i in range(self.num_iterations):
             self.logger.info(f"Native C - Iteration {i+1}/{self.num_iterations}")
             
-            memory_before = self._get_process_memory()
-            
             try:
                 start_time = perf_counter()
-                result = subprocess.run([
+                
+                # Use Popen for better control over the subprocess
+                process = subprocess.Popen([
                     cachesim_path,
                     self.trace_path,
                     "oracleGeneral",
                     "LRU",
                     "1",
                     "--ignore-obj-size", "1"
-                ], check=True, capture_output=True, text=True)
+                ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                
+                # Start memory monitoring
+                memory_monitor = SubprocessMemoryMonitor(process.pid)
+                memory_monitor.start_monitoring()
+                
+                # Wait for process to complete
+                stdout, stderr = process.communicate()
                 end_time = perf_counter()
                 
-                execution_time = end_time - start_time
-                memory_after = self._get_process_memory()
+                # Stop memory monitoring
+                peak_memory = memory_monitor.stop_monitoring()
                 
-                # Parse miss ratio from output (this may need adjustment based on actual output format)
-                miss_ratio = 0.0  # Default value
-                try:
-                    # Look for miss ratio in output
-                    for line in result.stdout.split('\n'):
-                        if 'miss ratio' in line.lower():
-                            miss_ratio = float(line.split()[-1])
-                            break
-                except:
-                    pass
+                if process.returncode != 0:
+                    self.logger.warning(f"Native C execution failed with return code {process.returncode}")
+                    self.logger.warning(f"stderr: {stderr}")
+                    continue
+                
+                execution_time = end_time - start_time
+                miss_ratio = self._parse_native_c_output(stdout)
                 
                 execution_times.append(execution_time)
-                memory_usage.append(memory_after - memory_before)
+                memory_usage.append(peak_memory)
                 miss_ratios.append(miss_ratio)
                 
-            except subprocess.CalledProcessError as e:
+            except (subprocess.SubprocessError, OSError) as e:
                 self.logger.warning(f"Native C execution failed: {e}")
                 continue
         
@@ -164,30 +249,36 @@ class CacheSimulationBenchmark:
             
             start_time = perf_counter()
             
-            # Setup reader and cache
-            reader = lcs.TraceReader(
-                trace=self.trace_path,
-                trace_type=lcs.TraceType.ORACLE_GENERAL_TRACE,
-                reader_init_params=lcs.ReaderInitParam(ignore_obj_size=True)
-            )
-            
-            wss_size = reader.get_working_set_size()
-            cache_size = int(wss_size[0] * CACHE_SIZE_RATIO)
-            cache = lcs.LRU(cache_size=cache_size)
-            
-            # Process trace
-            req_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
-            
-            end_time = perf_counter()
-            
-            # Memory tracking
-            current, peak = tracemalloc.get_traced_memory()
-            tracemalloc.stop()
-            memory_after = self._get_process_memory()
-            
-            execution_times.append(end_time - start_time)
-            memory_usage.append(memory_after - memory_before)
-            miss_ratios.append(req_miss_ratio)
+            try:
+                # Setup reader and cache
+                reader = lcs.TraceReader(
+                    trace=self.trace_path,
+                    trace_type=lcs.TraceType.ORACLE_GENERAL_TRACE,
+                    reader_init_params=lcs.ReaderInitParam(ignore_obj_size=True)
+                )
+                
+                wss_size = reader.get_working_set_size()
+                cache_size = int(wss_size[0] * self.cache_size_ratio)
+                cache = lcs.LRU(cache_size=cache_size)
+                
+                # Process trace
+                req_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+                
+                end_time = perf_counter()
+                
+                # Memory tracking
+                current, peak = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+                memory_after = self._get_process_memory()
+                
+                execution_times.append(end_time - start_time)
+                memory_usage.append(memory_after - memory_before)
+                miss_ratios.append(req_miss_ratio)
+                
+            except Exception as e:
+                self.logger.error(f"c_process_trace iteration {i+1} failed: {e}")
+                tracemalloc.stop()
+                continue
         
         return BenchmarkResult("Python c_process_trace", execution_times, memory_usage, miss_ratios)
     
@@ -208,40 +299,46 @@ class CacheSimulationBenchmark:
             
             start_time = perf_counter()
             
-            # Setup reader and cache
-            reader = lcs.TraceReader(
-                trace=self.trace_path,
-                trace_type=lcs.TraceType.ORACLE_GENERAL_TRACE,
-                reader_init_params=lcs.ReaderInitParam(ignore_obj_size=True)
-            )
-            
-            wss_size = reader.get_working_set_size()
-            cache_size = int(wss_size[0] * CACHE_SIZE_RATIO)
-            cache = lcs.LRU(cache_size=cache_size)
-            
-            # Manual loop processing
-            n_miss = 0
-            n_req = 0
-            reader.reset()
-            
-            for request in reader:
-                n_req += 1
-                hit = cache.get(request)
-                if not hit:
-                    n_miss += 1
-            
-            req_miss_ratio = n_miss / n_req if n_req > 0 else 0.0
-            
-            end_time = perf_counter()
-            
-            # Memory tracking
-            current, peak = tracemalloc.get_traced_memory()
-            tracemalloc.stop()
-            memory_after = self._get_process_memory()
-            
-            execution_times.append(end_time - start_time)
-            memory_usage.append(memory_after - memory_before)
-            miss_ratios.append(req_miss_ratio)
+            try:
+                # Setup reader and cache
+                reader = lcs.TraceReader(
+                    trace=self.trace_path,
+                    trace_type=lcs.TraceType.ORACLE_GENERAL_TRACE,
+                    reader_init_params=lcs.ReaderInitParam(ignore_obj_size=True)
+                )
+                
+                wss_size = reader.get_working_set_size()
+                cache_size = int(wss_size[0] * self.cache_size_ratio)
+                cache = lcs.LRU(cache_size=cache_size)
+                
+                # Manual loop processing
+                n_miss = 0
+                n_req = 0
+                reader.reset()
+                
+                for request in reader:
+                    n_req += 1
+                    hit = cache.get(request)
+                    if not hit:
+                        n_miss += 1
+                
+                req_miss_ratio = n_miss / n_req if n_req > 0 else 0.0
+                
+                end_time = perf_counter()
+                
+                # Memory tracking
+                current, peak = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+                memory_after = self._get_process_memory()
+                
+                execution_times.append(end_time - start_time)
+                memory_usage.append(memory_after - memory_before)
+                miss_ratios.append(req_miss_ratio)
+                
+            except Exception as e:
+                self.logger.error(f"Python loop iteration {i+1} failed: {e}")
+                tracemalloc.stop()
+                continue
         
         return BenchmarkResult("Python loop", execution_times, memory_usage, miss_ratios)
     
@@ -249,6 +346,7 @@ class CacheSimulationBenchmark:
         """Run all benchmarks and return results."""
         self.logger.info(f"Starting benchmark with {self.num_iterations} iterations")
         self.logger.info(f"Trace file: {self.trace_path}")
+        self.logger.info(f"Cache size ratio: {self.cache_size_ratio}")
         
         # Run benchmarks
         self.results["native_c"] = self._benchmark_native_c()
@@ -263,7 +361,7 @@ class CacheSimulationBenchmark:
         
         miss_ratios = []
         for name, result in self.results.items():
-            if result.execution_times:  # Only check methods that ran
+            if result.execution_times and result.miss_ratios:  # Only check methods that ran successfully
                 miss_ratios.append((name, result.mean_miss_ratio))
         
         if len(miss_ratios) < 2:
@@ -272,23 +370,31 @@ class CacheSimulationBenchmark:
         
         # Check if all miss ratios are within 1% of each other
         base_ratio = miss_ratios[0][1]
-        for name, ratio in miss_ratios[1:]:
-            if abs(ratio - base_ratio) > 0.01:
-                self.logger.warning(f"Miss ratio mismatch: {miss_ratios[0][0]}={base_ratio:.4f}, {name}={ratio:.4f}")
-                return False
+        validation_passed = True
         
-        self.logger.info("All miss ratios match within tolerance")
-        return True
+        for name, ratio in miss_ratios[1:]:
+            relative_diff = abs(ratio - base_ratio) / max(base_ratio, 1e-10)  # Avoid division by zero
+            if relative_diff > 0.01:  # 1% tolerance
+                self.logger.warning(f"Miss ratio mismatch: {miss_ratios[0][0]}={base_ratio:.4f}, {name}={ratio:.4f} (diff: {relative_diff:.2%})")
+                validation_passed = False
+        
+        if validation_passed:
+            self.logger.info("All miss ratios match within tolerance")
+        
+        return validation_passed
     
     def print_statistics(self):
         """Print detailed performance statistics."""
         print("\n" + "="*80)
         print("COMPREHENSIVE PERFORMANCE ANALYSIS")
         print("="*80)
+        print(f"Configuration: {self.num_iterations} iterations, cache size ratio: {self.cache_size_ratio}")
+        print(f"Trace file: {os.path.basename(self.trace_path)}")
         
         # Basic statistics
         for name, result in self.results.items():
             if not result.execution_times:
+                print(f"\n{result.method_name}: No valid results")
                 continue
                 
             print(f"\n{result.method_name} Performance:")
@@ -296,25 +402,27 @@ class CacheSimulationBenchmark:
             print(f"    Mean: {result.mean_time:.4f} ± {result.std_time:.4f} seconds")
             print(f"    Range: [{result.min_time:.4f}, {result.max_time:.4f}] seconds")
             print(f"  Memory Usage:")
-            print(f"    Mean: {result.mean_memory:.2f} MB")
+            if result.memory_usage:
+                print(f"    Mean: {result.mean_memory:.2f} MB")
+            else:
+                print(f"    Mean: N/A")
             print(f"  Cache Performance:")
             print(f"    Mean Miss Ratio: {result.mean_miss_ratio:.4f}")
+            print(f"  Successful Iterations: {len(result.execution_times)}/{self.num_iterations}")
         
         # Comparative analysis
-        if len([r for r in self.results.values() if r.execution_times]) >= 2:
+        valid_results = [(name, result) for name, result in self.results.items() if result.execution_times]
+        if len(valid_results) >= 2:
             print(f"\n{'Comparative Analysis':=^60}")
             
             # Find fastest method
-            fastest_method = min(
-                [(name, result) for name, result in self.results.items() if result.execution_times],
-                key=lambda x: x[1].mean_time
-            )
+            fastest_method = min(valid_results, key=lambda x: x[1].mean_time)
             
             print(f"\nFastest Method: {fastest_method[1].method_name} ({fastest_method[1].mean_time:.4f}s)")
             
             # Compare all methods to fastest
-            for name, result in self.results.items():
-                if not result.execution_times or name == fastest_method[0]:
+            for name, result in valid_results:
+                if name == fastest_method[0]:
                     continue
                 
                 speedup_factor = result.mean_time / fastest_method[1].mean_time
@@ -329,8 +437,9 @@ class CacheSimulationBenchmark:
             if not result.execution_times:
                 continue
             
-            # Estimate requests per second (this would need actual request count)
-            print(f"{result.method_name}: ~{1/result.mean_time:.1f} traces/second")
+            # Estimate traces per second
+            throughput = 1 / result.mean_time
+            print(f"{result.method_name}: ~{throughput:.1f} traces/second")
     
     def create_visualizations(self, save_path: str = "benchmark_comprehensive_analysis.png"):
         """Create comprehensive visualizations."""
@@ -377,19 +486,20 @@ class CacheSimulationBenchmark:
         
         # Plot 3: Memory usage comparison
         ax3 = fig.add_subplot(gs[1, 0])
-        methods = [result.method_name for result in valid_results.values() if result.memory_usage]
-        memory_means = [result.mean_memory for result in valid_results.values() if result.memory_usage]
+        methods_with_memory = [(result.method_name, result.mean_memory) for result in valid_results.values() if result.memory_usage]
         
-        if methods and memory_means:
+        if methods_with_memory:
+            methods, memory_means = zip(*methods_with_memory)
             bars = ax3.bar(methods, memory_means, color=['blue', 'red', 'green'][:len(methods)])
-            ax3.set_ylabel('Memory Usage (MB)')
+            ax3.set_ylabel('Memory Usage (MB) (Python show extra memory usage)')
             ax3.set_title('Average Memory Usage')
             ax3.tick_params(axis='x', rotation=45)
             
             # Add value labels on bars
             for bar, value in zip(bars, memory_means):
-                ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
-                        f'{value:.1f}', ha='center', va='bottom')
+                if value > 0:  # Only add label if we have valid memory data
+                    ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(memory_means)*0.01, 
+                            f'{value:.1f}', ha='center', va='bottom')
         
         # Plot 4: Performance comparison (relative to fastest)
         ax4 = fig.add_subplot(gs[1, 1])
@@ -440,7 +550,7 @@ class CacheSimulationBenchmark:
         ax6.grid(True, alpha=0.3)
         
         plt.suptitle(f'Cache Simulation Performance Benchmark\n'
-                    f'({self.num_iterations} iterations, Trace: {os.path.basename(self.trace_path)})', 
+                    f'({self.num_iterations} iterations, Cache ratio: {self.cache_size_ratio}, Trace: {os.path.basename(self.trace_path)})', 
                     fontsize=16, y=0.98)
         
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -461,9 +571,15 @@ class CacheSimulationBenchmark:
                 if not result.execution_times:
                     continue
                 
-                for i, (exec_time, mem_usage, miss_ratio) in enumerate(
-                    zip(result.execution_times, result.memory_usage, result.miss_ratios)
-                ):
+                max_len = max(len(result.execution_times), 
+                             len(result.memory_usage) if result.memory_usage else 0,
+                             len(result.miss_ratios) if result.miss_ratios else 0)
+                
+                for i in range(max_len):
+                    exec_time = result.execution_times[i] if i < len(result.execution_times) else None
+                    mem_usage = result.memory_usage[i] if result.memory_usage and i < len(result.memory_usage) else None
+                    miss_ratio = result.miss_ratios[i] if result.miss_ratios and i < len(result.miss_ratios) else None
+                    
                     writer.writerow({
                         'method': result.method_name,
                         'iteration': i + 1,
@@ -476,19 +592,16 @@ class CacheSimulationBenchmark:
 
 
 def main():
-    global CACHE_SIZE_RATIO
-    global NUM_ITERATIONS
-
     """Main function to run the benchmark."""
     import argparse
     
     parser = argparse.ArgumentParser(description="Comprehensive Cache Simulation Performance Benchmark")
     parser.add_argument("--trace_path", type=str, required=True, 
                        help="Path to the trace file")
-    parser.add_argument("--iterations", type=int, default=NUM_ITERATIONS,
-                       help=f"Number of iterations (default: {NUM_ITERATIONS})")
-    parser.add_argument("--cache_size_ratio", type=float, default=CACHE_SIZE_RATIO,
-                       help=f"Cache size as ratio of working set (default: {CACHE_SIZE_RATIO})")
+    parser.add_argument("--iterations", type=int, default=DEFAULT_NUM_ITERATIONS,
+                       help=f"Number of iterations (default: {DEFAULT_NUM_ITERATIONS})")
+    parser.add_argument("--cache_size_ratio", type=float, default=DEFAULT_CACHE_SIZE_RATIO,
+                       help=f"Cache size as ratio of working set (default: {DEFAULT_CACHE_SIZE_RATIO})")
     parser.add_argument("--output_dir", type=str, default=".",
                        help="Output directory for results (default: current directory)")
     parser.add_argument("--export_csv", action="store_true",
@@ -498,13 +611,13 @@ def main():
     
     args = parser.parse_args()
     
-    # Update global configuration
-    CACHE_SIZE_RATIO = args.cache_size_ratio
-    NUM_ITERATIONS = args.iterations
-
     try:
-        # Create benchmark instance
-        benchmark = CacheSimulationBenchmark(args.trace_path, args.iterations)
+        # Create benchmark instance with proper parameters (no more global variables)
+        benchmark = CacheSimulationBenchmark(
+            trace_path=args.trace_path,
+            num_iterations=args.iterations,
+            cache_size_ratio=args.cache_size_ratio
+        )
         
         # Run benchmark
         results = benchmark.run_benchmark()
