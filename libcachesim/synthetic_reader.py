@@ -182,7 +182,7 @@ class SyntheticReader(ReaderProtocol):
         """Get current read position"""
         return float(self.current_pos)
 
-    def get_working_set_size(self) -> Tuple[int, int]:
+    def get_working_set_size(self) -> tuple[int, int]:
         """Calculate working set size"""
         wss_obj, wss_byte = 0, 0
         if self.current_pos > 0:
