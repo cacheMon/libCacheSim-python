@@ -232,3 +232,4 @@ sftp-config.json
 CMakeFiles/*
 *.pyc
 !scripts/smart_build.py
+uv.lock
