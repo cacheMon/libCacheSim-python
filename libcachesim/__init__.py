@@ -19,6 +19,7 @@ from .libcachesim_python import (
 from .cache import (
     CacheBase,
     # Core algorithms
+    LHD,
     LRU,
     FIFO,
     LFU,
@@ -74,6 +75,7 @@ __all__ = [
     # Cache base class
     "CacheBase",
     # Core cache algorithms
+    "LHD",
     "LRU",
     "FIFO",
     "LFU",

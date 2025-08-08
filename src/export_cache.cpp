@@ -279,9 +279,20 @@ void export_cache(py::module& m) {
           "req"_a)
       .def(
           "find",
-          [](cache_t& self, const request_t& req, const bool update_cache) {
+          [](cache_t& self, const request_t& req, const bool update_cache) -> py::object {
             cache_obj_t* obj = self.find(&self, &req, update_cache);
-            return obj ? py::cast(obj, py::return_value_policy::reference) : py::none();
+            // Return None if obj is null (not found)
+            if (obj == nullptr) {
+                return py::none();
+            }
+            // NOTE(haocheng): For LHD only, return a dummy object for hit
+            if (obj == reinterpret_cast<cache_obj_t *>(0x1)) {
+                cache_obj_t* obj = new cache_obj_t();
+                obj->obj_id = req.obj_id;
+                obj->obj_size = req.obj_size;
+                return py::cast(std::unique_ptr<cache_obj_t, CacheObjectDeleter>(obj));
+            }
+            return py::cast(obj, py::return_value_policy::reference);
           },
           "req"_a, "update_cache"_a = true)
       .def(

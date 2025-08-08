@@ -9,6 +9,7 @@ import tempfile
 import os
 from libcachesim import (
     # Basic algorithms
+    LHD,
     LRU,
     FIFO,
     LFU,
@@ -71,6 +72,7 @@ class TestCacheBasicFunctionality:
     @pytest.mark.parametrize(
         "cache_class",
         [
+            LHD,
             LRU,
             FIFO,
             LFU,
@@ -109,10 +111,14 @@ class TestCacheBasicFunctionality:
                 pytest.skip(f"Cache {cache_class.__name__} failed to initialize: {e}")
 
     @pytest.mark.parametrize(
-        "cache_class", [LRU, FIFO, LFU, ARC, Clock, Random, S3FIFO, Sieve, LIRS, TwoQ, SLRU, WTinyLFU]
+        "cache_class", [LHD, LRU, FIFO, LFU, ARC, Clock, Random, S3FIFO, Sieve, LIRS, TwoQ, SLRU, WTinyLFU]
     )
     def test_basic_get_and_insert(self, cache_class):
         """Test basic get and insert operations"""
+        if cache_class == LHD:
+            pytest.skip("LHD's insert always returns None")
+
+
         cache = cache_class(1024 * 1024)  # 1MB cache
 
         # Create a request
@@ -141,6 +147,7 @@ class TestCacheBasicFunctionality:
     @pytest.mark.parametrize(
         "cache_class",
         [
+            LHD,
             LRU,
             FIFO,
             LFU,
@@ -192,6 +199,7 @@ class TestCacheBasicFunctionality:
     @pytest.mark.parametrize(
         "cache_class",
         [
+            LHD,
             LRU,
             FIFO,
             LFU,
@@ -239,6 +247,7 @@ class TestCacheBasicFunctionality:
     @pytest.mark.parametrize(
         "cache_class",
         [
+            LHD,
             LRU,
             FIFO,
             LFU,

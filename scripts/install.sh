@@ -36,7 +36,7 @@ if [ $? -ne 0 ]; then
 fi
 
 python scripts/sync_version.py
-python -m pip install -e . -vvv
+python -m pip3 install -e . -vvv
 
 # Test that the import works
 echo "Testing import..."
