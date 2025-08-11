@@ -167,11 +167,23 @@ static void pypluginCache_free(cache_t* cache) {
     return;
   }
 
-  // Use smart pointer for automatic cleanup
-  std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter> params(
-      static_cast<pypluginCache_params_t*>(cache->eviction_params));
+  pypluginCache_params_t* params =
+      static_cast<pypluginCache_params_t*>(cache->eviction_params);
 
-  // The smart pointer destructor will handle cleanup automatically
+  // Explicitly call the cache_free_hook before cleanup
+  if (!params->cache_free_hook.is_none()) {
+    try {
+      params->cache_free_hook(params->data);
+    } catch (...) {
+      // Ignore exceptions during cleanup to prevent double-fault
+    }
+  }
+
+  // Clean up the parameters
+  delete params;
+  cache->eviction_params = nullptr;
+
+  // Free the cache structure
   cache_struct_free(cache);
 }
 
