@@ -1,14 +1,15 @@
 """Wrapper of Reader with S3 support."""
+from __future__ import annotations
 
 import logging
-from typing import overload, Union, Optional
+from typing import overload, Union, Optional, Any
 from collections.abc import Iterator
 from urllib.parse import urlparse
 
 from .protocols import ReaderProtocol
 from .libcachesim_python import (
     TraceType,
-    SamplerType,
+    TraceFormat,
     Request,
     ReaderInitParam,
     Reader,
@@ -19,6 +20,46 @@ from .libcachesim_python import (
 from ._s3_cache import get_data_loader
 
 logger = logging.getLogger(__name__)
+
+
+class TraceReaderSliceIterator:
+    """Iterator for sliced TraceReader."""
+
+    def __init__(self, reader: "TraceReader", start: int, stop: int, step: int):
+        self.reader = reader
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.current = start
+        
+    def __iter__(self) -> Iterator[Request]:
+        return self
+        
+    def __next__(self) -> Request:
+        if self.current >= self.stop:
+            raise StopIteration
+            
+        # Reset reader and skip to current position
+        self.reader.reset()
+        
+        # Check if we can use skip_n_req or need to simulate with read_one_req
+        # zstd files cannot use skip_n_req
+        if not self.reader._reader.is_zstd_file:
+            logger.debug(f"Skipping {self.current} requests using skip_n_req")
+            try:
+                self.reader.skip_n_req(self.current)
+                req = self.reader.read_one_req()
+            except RuntimeError:
+                logger.warning(f"Failed to skip {self.current} requests, falling back to simulation")
+                # Fallback to simulation if skip_n_req fails
+                req = self.reader._simulate_skip_and_read_single(self.current)
+        else:
+            logger.debug(f"Simulating skip by reading {self.current} requests one by one")
+            # Simulate skip by reading requests one by one
+            req = self.reader._simulate_skip_and_read_single(self.current)
+
+        self.current += self.step
+        return req
 
 
 class TraceReader(ReaderProtocol):
@@ -302,10 +343,52 @@ class TraceReader(ReaderProtocol):
             raise StopIteration
         return req
 
-    def __getitem__(self, index: int) -> Request:
-        if index < 0 or index >= self._reader.get_num_of_req():
-            raise IndexError("Index out of range")
-        self._reader.reset()
-        self._reader.skip_n_req(index)
+    def __getitem__(self, key: Union[int, slice]) -> Union[Request, TraceReaderSliceIterator]:
+        if isinstance(key, slice):
+            # Handle slice
+            total_len = self._reader.get_num_of_req()
+            start, stop, step = key.indices(total_len)
+            return TraceReaderSliceIterator(self, start, stop, step)
+        elif isinstance(key, int):
+            # Handle single index
+            total_len = self._reader.get_num_of_req()
+            if key < 0:
+                key += total_len
+            if key < 0 or key >= total_len:
+                raise IndexError("Index out of range")
+            
+            self._reader.reset()
+            
+            # Check if we can use skip_n_req or need to simulate
+            if self._can_use_skip_n_req():
+                try:
+                    self._reader.skip_n_req(key)
+                    req = Request()
+                    ret = self._reader.read_one_req(req)
+                    if ret != 0:
+                        raise RuntimeError("Failed to read request")
+                    return req
+                except RuntimeError:
+                    # Fallback to simulation
+                    self._reader.reset()
+                    return self._simulate_skip_and_read_single(key)
+            else:
+                # Simulate skip by reading requests one by one
+                return self._simulate_skip_and_read_single(key)
+        else:
+            raise TypeError("TraceReader indices must be integers or slices")
+    
+    def _simulate_skip_and_read_single(self, index: int) -> Request:
+        """Simulate skip_n_req by reading requests one by one for single index access."""
+        for _ in range(index):
+            req = Request()
+            ret = self._reader.read_one_req(req)
+            if ret != 0:
+                raise IndexError(f"Cannot reach index {index}")
+        
+        # Read the target request
         req = Request()
-        return self._reader.read_one_req(req)
+        ret = self._reader.read_one_req(req)
+        if ret != 0:
+            raise IndexError(f"Cannot read request at index {index}")
+        return req
