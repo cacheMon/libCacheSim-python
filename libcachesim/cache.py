@@ -81,6 +81,9 @@ class CacheBase(ABC):
 
     def get_n_obj(self) -> int:
         return self._cache.get_n_obj()
+    
+    def set_cache_size(self, new_size: int) -> None:
+        self._cache.set_cache_size(new_size)
 
     def print_cache(self) -> str:
         return self._cache.print_cache()

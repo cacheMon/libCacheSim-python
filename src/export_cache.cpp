@@ -352,6 +352,10 @@ void export_cache(py::module& m) {
       .def("get_occupied_byte",
            [](cache_t& self) { return self.get_occupied_byte(&self); })
       .def("get_n_obj", [](cache_t& self) { return self.get_n_obj(&self); })
+      .def(
+          "set_cache_size",
+          [](cache_t& self, uint64_t new_size) { self.cache_size = new_size; },
+          "new_size"_a)
       .def("print_cache", [](cache_t& self) {
         // Capture stdout to return as string
         std::ostringstream captured_output;

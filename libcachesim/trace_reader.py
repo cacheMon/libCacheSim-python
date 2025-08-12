@@ -1,14 +1,15 @@
 """Wrapper of Reader with S3 support."""
+from __future__ import annotations
 
 import logging
-from typing import overload, Union, Optional
+from typing import overload, Union, Optional, Any
 from collections.abc import Iterator
 from urllib.parse import urlparse
 
 from .protocols import ReaderProtocol
 from .libcachesim_python import (
     TraceType,
-    SamplerType,
+    TraceFormat,
     Request,
     ReaderInitParam,
     Reader,
@@ -19,6 +20,78 @@ from .libcachesim_python import (
 from ._s3_cache import get_data_loader
 
 logger = logging.getLogger(__name__)
+
+
+class TraceReaderSliceIterator:
+    """Iterator for sliced TraceReader."""
+
+    def __init__(self, reader: "TraceReader", start: int, stop: int, step: int):
+        # Clone the reader to avoid side effects on the original
+        self.reader = reader.clone()
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.current = start
+        
+        # Initialize position: reset and skip to start position once
+        self.reader.reset()
+        if start > 0:
+            self._skip_to_start_position(start)
+        
+    def __iter__(self) -> Iterator[Request]:
+        return self
+        
+    def __next__(self) -> Request:
+        if self.current >= self.stop:
+            raise StopIteration
+            
+        # Read the current request
+        try:
+            req = self.reader.read_one_req()
+        except RuntimeError:
+            raise StopIteration
+        
+        # Advance to next position based on step
+        if self.step > 1:
+            self._skip_requests(self.step - 1)
+        
+        self.current += self.step
+        return req
+    
+    def _skip_to_start_position(self, position: int) -> None:
+        """Skip to the start position efficiently."""
+        if not self.reader._reader.is_zstd_file:
+            # Try using skip_n_req for non-zstd files
+            skipped = self.reader.skip_n_req(position)
+            if skipped != position:
+                # If we couldn't skip the expected number, simulate the rest
+                remaining = position - skipped
+                self._simulate_skip(remaining)
+        else:
+            # For zstd files, always simulate
+            self._simulate_skip(position)
+    
+    def _skip_requests(self, n: int) -> None:
+        """Skip n requests efficiently."""
+        if not self.reader._reader.is_zstd_file:
+            # Try using skip_n_req for non-zstd files
+            skipped = self.reader.skip_n_req(n)
+            if skipped != n:
+                # If we couldn't skip all, we're likely at EOF
+                self.current = self.stop  # Mark as done
+        else:
+            # For zstd files, simulate
+            self._simulate_skip(n)
+    
+    def _simulate_skip(self, n: int) -> None:
+        """Simulate skip by reading requests one by one."""
+        for _ in range(n):
+            try:
+                self.reader.read_one_req()
+            except RuntimeError:
+                # If we can't read more, we're at EOF
+                self.current = self.stop  # Mark as done
+                break
 
 
 class TraceReader(ReaderProtocol):
@@ -302,10 +375,51 @@ class TraceReader(ReaderProtocol):
             raise StopIteration
         return req
 
-    def __getitem__(self, index: int) -> Request:
-        if index < 0 or index >= self._reader.get_num_of_req():
-            raise IndexError("Index out of range")
-        self._reader.reset()
-        self._reader.skip_n_req(index)
-        req = Request()
-        return self._reader.read_one_req(req)
+    def __getitem__(self, key: Union[int, slice]) -> Union[Request, TraceReaderSliceIterator]:
+        if isinstance(key, slice):
+            # Handle slice
+            total_len = self._reader.get_num_of_req()
+            start, stop, step = key.indices(total_len)
+            return TraceReaderSliceIterator(self, start, stop, step)
+        elif isinstance(key, int):
+            # Handle single index
+            total_len = self._reader.get_num_of_req()
+            if key < 0:
+                key += total_len
+            if key < 0 or key >= total_len:
+                raise IndexError("Index out of range")
+            
+            self._reader.reset()
+            
+            # Try to skip to the target position
+            if key > 0:
+                if not self._reader.is_zstd_file:
+                    # For non-zstd files, try skip_n_req and check return value
+                    skipped = self._reader.skip_n_req(key)
+                    if skipped != key:
+                        # If we couldn't skip the expected number, simulate the rest
+                        remaining = key - skipped
+                        self._simulate_skip_single(remaining)
+                else:
+                    # For zstd files, always simulate
+                    self._simulate_skip_single(key)
+            
+            # Read the target request
+            req = Request()
+            ret = self._reader.read_one_req(req)
+            if ret != 0:
+                raise IndexError(f"Cannot read request at index {key}")
+            return req
+        else:
+            raise TypeError("TraceReader indices must be integers or slices")
+    
+    def _simulate_skip_single(self, n: int) -> None:
+        """Simulate skip by reading requests one by one for single index access."""
+        for i in range(n):
+            req = Request()
+            ret = self._reader.read_one_req(req)
+            if ret != 0:
+                raise IndexError(f"Cannot skip to position, reached EOF at {i}")
+    
+    # Note: Removed old inefficient methods _can_use_skip_n_req and _simulate_skip_and_read_single
+    # The new implementation is more efficient and handles skip_n_req return values properly

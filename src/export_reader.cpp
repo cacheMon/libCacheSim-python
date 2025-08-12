@@ -98,6 +98,13 @@ void export_reader(py::module& m) {
       .value("UNKNOWN_TRACE", trace_type_e::UNKNOWN_TRACE)
       .export_values();
 
+  // Trace format enumeration
+  py::enum_<trace_format_e>(m, "TraceFormat")
+      .value("BINARY_TRACE_FORMAT", trace_format_e::BINARY_TRACE_FORMAT)
+      .value("TXT_TRACE_FORMAT", trace_format_e::TXT_TRACE_FORMAT)
+      .value("INVALID_TRACE_FORMAT", trace_format_e::INVALID_TRACE_FORMAT)
+      .export_values();
+
   py::enum_<read_direction>(m, "ReadDirection")
       .value("READ_FORWARD", read_direction::READ_FORWARD)
       .value("READ_BACKWARD", read_direction::READ_BACKWARD)
@@ -302,11 +309,9 @@ void export_reader(py::module& m) {
       .def(
           "skip_n_req",
           [](reader_t& self, int n) {
-            int ret = skip_n_req(&self, n);
-            if (ret != 0) {
-              throw std::runtime_error("Failed to skip requests");
-            }
-            return ret;
+            int count = skip_n_req(&self, n);
+            // Return the actual number of requests skipped
+            return count;
           },
           "n"_a)
       .def("read_one_req_above",

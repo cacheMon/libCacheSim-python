@@ -13,6 +13,28 @@ from .libcachesim_python import Request, ReqOp
 from .protocols import ReaderProtocol
 
 
+class SyntheticReaderSliceIterator:
+    """Iterator for sliced SyntheticReader."""
+    
+    def __init__(self, reader: "SyntheticReader", start: int, stop: int, step: int):
+        self.reader = reader
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.current = start
+        
+    def __iter__(self) -> Iterator[Request]:
+        return self
+        
+    def __next__(self) -> Request:
+        if self.current >= self.stop:
+            raise StopIteration
+            
+        req = self.reader[self.current]
+        self.current += self.step
+        return req
+
+
 class SyntheticReader(ReaderProtocol):
     """Efficient synthetic request generator supporting multiple distributions"""
 
@@ -206,19 +228,29 @@ class SyntheticReader(ReaderProtocol):
 
         return self.read_one_req()
 
-    def __getitem__(self, index: int) -> Request:
-        """Support index access"""
-        if index < 0 or index >= self.num_of_req:
-            raise IndexError("Index out of range")
+    def __getitem__(self, key: Union[int, slice]) -> Union[Request, SyntheticReaderSliceIterator]:
+        """Support index and slice access"""
+        if isinstance(key, slice):
+            # Handle slice
+            start, stop, step = key.indices(self.num_of_req)
+            return SyntheticReaderSliceIterator(self, start, stop, step)
+        elif isinstance(key, int):
+            # Handle single index
+            if key < 0:
+                key += self.num_of_req
+            if key < 0 or key >= self.num_of_req:
+                raise IndexError("Index out of range")
 
-        req = Request()
-        obj_id = self.obj_ids[index]
-        req.obj_id = obj_id
-        req.obj_size = self.obj_size
-        req.clock_time = index * self.time_span // self.num_of_req
-        req.op = ReqOp.OP_READ
-        req.valid = True
-        return req
+            req = Request()
+            obj_id = self.obj_ids[key]
+            req.obj_id = obj_id
+            req.obj_size = self.obj_size
+            req.clock_time = key * self.time_span // self.num_of_req
+            req.op = ReqOp.OP_READ
+            req.valid = True
+            return req
+        else:
+            raise TypeError("SyntheticReader indices must be integers or slices")
 
 
 def _gen_zipf(m: int, alpha: float, n: int, start: int = 0) -> np.ndarray:
