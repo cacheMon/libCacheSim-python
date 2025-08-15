@@ -12,7 +12,8 @@ nav:
     - Getting Started: 
       - getting_started/quickstart.md
       - getting_started/installation.md
-    - Examples: 
+    - Examples:
+      - examples/reader.md
       - examples/simulation.md
       - examples/analysis.md
       - examples/plugins.md
