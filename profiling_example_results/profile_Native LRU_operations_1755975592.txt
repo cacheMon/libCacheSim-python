@@ -1,0 +1,55 @@
+Profile Results for: Native LRU_operations
+============================================================
+Execution Time: 0.0073 seconds
+Memory Peak: 0.10 MB
+Memory Change: 0.12 MB
+CPU Percent: 0.0%
+
+Custom Metrics:
+  n_hit: 372
+  n_miss: 628
+  n_total: 1001
+  hit_ratio: 0.37162837162837165
+
+============================================================
+
+Top Functions by Cumulative Time:
+----------------------------------------
+         5007 function calls in 0.007 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.001    0.001    0.007    0.007 /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations)
+     1001    0.004    0.000    0.004    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__)
+     1000    0.001    0.000    0.002    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:167(get)
+     1001    0.000    0.000    0.000    0.000 {built-in method builtins.hash}
+      628    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+      372    0.000    0.000    0.000    0.000 {method 'move_to_end' of 'collections.OrderedDict' objects}
+     1001    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:25(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:38(reset)
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:41(__iter__)
+
+
+
+----------------------------------------
+Top Functions by Total Time:
+----------------------------------------
+         5007 function calls in 0.007 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     1001    0.004    0.000    0.004    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__)
+     1000    0.001    0.000    0.002    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:167(get)
+        1    0.001    0.001    0.007    0.007 /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations)
+     1001    0.000    0.000    0.000    0.000 {built-in method builtins.hash}
+      628    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+      372    0.000    0.000    0.000    0.000 {method 'move_to_end' of 'collections.OrderedDict' objects}
+     1001    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:25(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:38(reset)
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:41(__iter__)
+
+

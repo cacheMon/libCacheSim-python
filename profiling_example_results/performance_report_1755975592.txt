@@ -1,0 +1,162 @@
+libCacheSim Performance Analysis Report
+============================================================
+Generated: 2025-08-23 18:59:52
+Total Profile Runs: 6
+
+Summary of All Profile Runs:
+------------------------------------------------------------
+Method                    Time (s)     Memory (MB)  CPU %   
+------------------------------------------------------------
+Native LRU_operations     0.0073       0.10         0.0     
+Native LRU_trace_processing 0.0808       0.11         98.5    
+Plugin LRU_operations     0.0081       0.04         118.1   
+Plugin LRU_trace_processing 0.0837       0.04         95.3    
+Slow Plugin LRU_operations 0.2855       0.04         10.5    
+Slow Plugin LRU_trace_processing 2.8570       0.04         10.5    
+------------------------------------------------------------
+TOTAL                     3.3224      
+
+
+1. Detailed Analysis: Native LRU_operations
+==================================================
+Execution Time: 0.0073 seconds
+Memory Peak: 0.10 MB
+Memory Change: 0.12 MB
+CPU Usage: 0.0%
+
+Custom Metrics:
+  n_hit: 372
+  n_miss: 628
+  n_total: 1001
+  hit_ratio: 0.37162837162837165
+
+Function Call Analysis:
+  Total Function Calls: 5007
+  Unique Functions: 10
+
+  Top 5 Functions by Time:
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__): 0.0038s (1001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:167(get): 0.0013s (1000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations): 0.0011s (1 calls)
+    ~:0(<built-in method builtins.hash>): 0.0005s (1001 calls)
+    ~:0(<built-in method builtins.len>): 0.0002s (628 calls)
+
+
+2. Detailed Analysis: Native LRU_trace_processing
+==================================================
+Execution Time: 0.0808 seconds
+Memory Peak: 0.11 MB
+Memory Change: 0.12 MB
+CPU Usage: 98.5%
+
+Custom Metrics:
+  obj_miss_ratio: 0.03720000000000001
+  byte_miss_ratio: 0.03720000000000001
+
+Function Call Analysis:
+  Total Function Calls: 50007
+  Unique Functions: 12
+
+  Top 5 Functions by Time:
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__): 0.0363s (10001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:183(process_trace): 0.0228s (1 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:167(get): 0.0108s (10000 calls)
+    ~:0(<method 'move_to_end' of 'collections.OrderedDict' objects>): 0.0052s (9628 calls)
+    ~:0(<built-in method builtins.hash>): 0.0046s (10000 calls)
+
+
+3. Detailed Analysis: Plugin LRU_operations
+==================================================
+Execution Time: 0.0081 seconds
+Memory Peak: 0.04 MB
+Memory Change: 0.00 MB
+CPU Usage: 118.1%
+
+Custom Metrics:
+  n_hit: 0
+  n_miss: 1000
+  n_total: 1001
+  hit_ratio: 0.0
+
+Function Call Analysis:
+  Total Function Calls: 8007
+  Unique Functions: 12
+
+  Top 5 Functions by Time:
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__): 0.0036s (1001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:118(get): 0.0022s (1000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations): 0.0013s (1 calls)
+    ~:0(<built-in method builtins.hash>): 0.0004s (1001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:91(get_size): 0.0002s (1000 calls)
+
+
+4. Detailed Analysis: Plugin LRU_trace_processing
+==================================================
+Execution Time: 0.0837 seconds
+Memory Peak: 0.04 MB
+Memory Change: 0.00 MB
+CPU Usage: 95.3%
+
+Custom Metrics:
+  obj_miss_ratio: 1.0
+  byte_miss_ratio: 1.0
+
+Function Call Analysis:
+  Total Function Calls: 80007
+  Unique Functions: 14
+
+  Top 5 Functions by Time:
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__): 0.0371s (10001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:118(get): 0.0223s (10000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:136(process_trace): 0.0143s (1 calls)
+    ~:0(<built-in method builtins.hash>): 0.0045s (10000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:91(get_size): 0.0017s (10000 calls)
+
+
+5. Detailed Analysis: Slow Plugin LRU_operations
+==================================================
+Execution Time: 0.2855 seconds
+Memory Peak: 0.04 MB
+Memory Change: 0.00 MB
+CPU Usage: 10.5%
+
+Custom Metrics:
+  n_hit: 0
+  n_miss: 1000
+  n_total: 1001
+  hit_ratio: 0.0
+
+Function Call Analysis:
+  Total Function Calls: 11007
+  Unique Functions: 14
+
+  Top 5 Functions by Time:
+    ~:0(<built-in method time.sleep>): 0.2734s (2000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__): 0.0042s (1001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:118(get): 0.0029s (1000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:253(cache_hit): 0.0019s (1000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations): 0.0016s (1 calls)
+
+
+6. Detailed Analysis: Slow Plugin LRU_trace_processing
+==================================================
+Execution Time: 2.8570 seconds
+Memory Peak: 0.04 MB
+Memory Change: 0.00 MB
+CPU Usage: 10.5%
+
+Custom Metrics:
+  obj_miss_ratio: 1.0
+  byte_miss_ratio: 1.0
+
+Function Call Analysis:
+  Total Function Calls: 110007
+  Unique Functions: 16
+
+  Top 5 Functions by Time:
+    ~:0(<built-in method time.sleep>): 2.7355s (20000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__): 0.0429s (10001 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:118(get): 0.0297s (10000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:253(cache_hit): 0.0186s (10000 calls)
+    /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:136(process_trace): 0.0164s (1 calls)
+

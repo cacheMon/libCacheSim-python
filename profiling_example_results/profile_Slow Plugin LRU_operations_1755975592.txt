@@ -1,0 +1,63 @@
+Profile Results for: Slow Plugin LRU_operations
+============================================================
+Execution Time: 0.2855 seconds
+Memory Peak: 0.04 MB
+Memory Change: 0.00 MB
+CPU Percent: 10.5%
+
+Custom Metrics:
+  n_hit: 0
+  n_miss: 1000
+  n_total: 1001
+  hit_ratio: 0.0
+
+============================================================
+
+Top Functions by Cumulative Time:
+----------------------------------------
+         11007 function calls in 0.285 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.002    0.002    0.285    0.285 /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations)
+     1000    0.003    0.000    0.279    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:118(get)
+     2000    0.273    0.000    0.273    0.000 {built-in method time.sleep}
+     1000    0.002    0.000    0.164    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:253(cache_hit)
+     1000    0.000    0.000    0.112    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:275(slow_cache_miss_hook)
+     1001    0.004    0.000    0.005    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__)
+     1001    0.001    0.000    0.001    0.000 {built-in method builtins.hash}
+     1000    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:91(get_size)
+     1000    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:68(cache_hit)
+     1000    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+     1001    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:25(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:38(reset)
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:41(__iter__)
+
+
+
+----------------------------------------
+Top Functions by Total Time:
+----------------------------------------
+         11007 function calls in 0.285 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     2000    0.273    0.000    0.273    0.000 {built-in method time.sleep}
+     1001    0.004    0.000    0.005    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:44(__next__)
+     1000    0.003    0.000    0.279    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:118(get)
+     1000    0.002    0.000    0.164    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:253(cache_hit)
+        1    0.002    0.002    0.285    0.285 /home/runner/work/libCacheSim-python/libCacheSim-python/libcachesim/profiler.py:194(run_cache_operations)
+     1001    0.001    0.000    0.001    0.000 {built-in method builtins.hash}
+     1000    0.000    0.000    0.112    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:275(slow_cache_miss_hook)
+     1000    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:91(get_size)
+     1000    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:68(cache_hit)
+     1000    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+     1001    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:25(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:38(reset)
+        1    0.000    0.000    0.000    0.000 /home/runner/work/libCacheSim-python/libCacheSim-python/examples/profiling_analysis.py:41(__iter__)
+
+

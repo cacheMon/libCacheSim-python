@@ -60,6 +60,7 @@ from .trace_reader import TraceReader
 from .trace_analyzer import TraceAnalyzer
 from .synthetic_reader import SyntheticReader, create_zipf_requests, create_uniform_requests
 from .util import Util
+from .profiler import CacheSimProfiler, ProfileResult, profile_cache_operations, profile_trace_processing
 
 __all__ = [
     # Core classes
@@ -119,6 +120,11 @@ __all__ = [
     "create_uniform_requests",
     # Utilities
     "Util",
+    # Profiling
+    "CacheSimProfiler",
+    "ProfileResult", 
+    "profile_cache_operations",
+    "profile_trace_processing",
     # Metadata
     "__doc__",
     "__version__",
