@@ -20,6 +20,7 @@ using py::literals::operator""_a;
 void export_cache(py::module &m);
 void export_pyplugin_cache(py::module &m);
 
+void export_admissioner(py::module &m);
 void export_reader(py::module &m);
 void export_analyzer(py::module &m);
 void export_misc(py::module &m);

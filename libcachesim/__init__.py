@@ -5,6 +5,7 @@ from __future__ import annotations
 from .libcachesim_python import (
     Cache,
     Request,
+    Admissioner,
     ReqOp,
     ReaderInitParam,
     TraceType,
