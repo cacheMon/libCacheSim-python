@@ -16,7 +16,38 @@ namespace libcachesim {
 
 namespace py = pybind11;
 
+template <admissioner_t *(*fn)(const char *)>
+void export_admissioner_creator(py::module &m, const std::string &name) {
+  m.def(
+      name.c_str(),
+      [=](py::object params_obj) {
+        const char *params = nullptr;
+        std::string s;
+
+        // Here, by allowing the passing of None to resolve to NULL, we can
+        // allow the default arguments specified in C++ to be used when no
+        // arguments are specified through the Python wrapper classes.
+        if (!params_obj.is_none()) {
+          s = params_obj.cast<std::string>();
+          params = s.c_str();
+        }
+
+        // Admissioner is exported lower down
+        admissioner_t *admissioner = fn(params);
+        if (!admissioner)
+          throw std::runtime_error("Creater for " + name + " returned NULL");
+        return admissioner;
+      },
+      py::return_value_policy::reference);
+}
+
 void export_admissioner(py::module &m) {
+  // ***********************************************************************
+  // ****                                                               ****
+  // ****                 Admissioner struct bindings                   ****
+  // ****                                                               ****
+  // ***********************************************************************
+
   py::class_<admissioner_t>(m, "Admissioner")
       .def(py::init<>())
       .def_readwrite("params", &admissioner_t::params)
@@ -70,6 +101,22 @@ void export_admissioner(py::module &m) {
           throw std::runtime_error("free function pointer is NULL");
         self.free(&self);
       });
+  // ***********************************************************************
+  // ****                                                               ****
+  // ****             end of admissioner struct bindings                ****
+  // ****                                                               ****
+  // ***********************************************************************
+
+  export_admissioner_creator<create_bloomfilter_admissioner>(
+      m, "create_bloomfilter_admissioner");
+  export_admissioner_creator<create_prob_admissioner>(
+      m, "create_prob_admissioner");
+  export_admissioner_creator<create_size_admissioner>(
+      m, "create_size_admissioner");
+  export_admissioner_creator<create_size_probabilistic_admissioner>(
+      m, "create_size_probabilistic_admissioner");
+  export_admissioner_creator<create_adaptsize_admissioner>(
+      m, "create_adaptsize_admissioner");
 }
 
 }  // namespace libcachesim

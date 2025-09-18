@@ -27,6 +27,8 @@ from .libcachesim_python import (
     # Optimal algorithms
     Belady_init,
     BeladySize_init,
+    # Cache admission
+    Admissioner,
     # Probabilistic algorithms
     LRU_Prob_init,
     flashProb_init,
@@ -49,7 +51,9 @@ class CacheBase(ABC):
 
     _cache: Cache  # Internal C++ cache object
 
-    def __init__(self, _cache: Cache):
+    def __init__(self, _cache: Cache, admissioner: Admissioner = None):
+        if admissioner is not None:
+            _cache.admissioner = admissioner._admissioner
         self._cache = _cache
 
     def get(self, req: Request) -> bool:
@@ -81,7 +85,7 @@ class CacheBase(ABC):
 
     def get_n_obj(self) -> int:
         return self._cache.get_n_obj()
-    
+
     def set_cache_size(self, new_size: int) -> None:
         self._cache.set_cache_size(new_size)
 
@@ -171,10 +175,16 @@ class LRU(CacheBase):
     """Least Recently Used cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: Admissioner = None,
     ):
         super().__init__(
-            _cache=LRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 

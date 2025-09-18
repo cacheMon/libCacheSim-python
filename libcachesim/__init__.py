@@ -5,7 +5,6 @@ from __future__ import annotations
 from .libcachesim_python import (
     Cache,
     Request,
-    Admissioner,
     ReqOp,
     ReaderInitParam,
     TraceType,
@@ -55,6 +54,14 @@ from .cache import (
     LRB,
     # Plugin cache
     PluginCache,
+)
+
+from .admissioner import (
+    BloomFilterAdmissioner,
+    ProbAdmissioner,
+    SizeAdmissioner,
+    SizeProbabilisticAdmissioner,
+    AdaptSizeAdmissioner,
 )
 
 from .trace_reader import TraceReader
@@ -111,6 +118,12 @@ __all__ = [
     "LRB",
     # Plugin cache
     "PluginCache",
+    # Admission algorithms
+    "BloomFilterAdmissioner",
+    "ProbAdmissioner",
+    "SizeAdmissioner",
+    "SizeProbabilisticAdmissioner",
+    "AdaptSizeAdmissioner",
     # Readers and analyzers
     "TraceReader",
     "TraceAnalyzer",
