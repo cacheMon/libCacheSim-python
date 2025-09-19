@@ -62,6 +62,7 @@ from .admissioner import (
     SizeAdmissioner,
     SizeProbabilisticAdmissioner,
     AdaptSizeAdmissioner,
+    PluginAdmissioner,
 )
 
 from .trace_reader import TraceReader
@@ -124,6 +125,7 @@ __all__ = [
     "SizeAdmissioner",
     "SizeProbabilisticAdmissioner",
     "AdaptSizeAdmissioner",
+    "PluginAdmissioner",
     # Readers and analyzers
     "TraceReader",
     "TraceAnalyzer",

@@ -7,6 +7,7 @@ from .libcachesim_python import (
     create_size_admissioner,
     create_size_probabilistic_admissioner,
     create_adaptsize_admissioner,
+    create_plugin_admissioner,
 )
 
 
@@ -66,4 +67,22 @@ class AdaptSizeAdmissioner(AdmissionerBase):
         ) or None
 
         admissioner = create_adaptsize_admissioner(params)
+        super().__init__(admissioner)
+
+
+class PluginAdmissioner(AdmissionerBase):
+    def __init__(self,
+                 admissioner_name,
+                 admissioner_init_hook,
+                 admissioner_admit_hook,
+                 admissioner_clone_hook,
+                 admissioner_update_hook,
+                 admissioner_free_hook):
+        admissioner = create_plugin_admissioner(
+            admissioner_name,
+            admissioner_init_hook,
+            admissioner_admit_hook,
+            admissioner_clone_hook,
+            admissioner_update_hook,
+            admissioner_free_hook)
         super().__init__(admissioner)

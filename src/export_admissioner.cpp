@@ -16,6 +16,92 @@ namespace libcachesim {
 
 namespace py = pybind11;
 
+typedef struct __attribute__((visibility("hidden")))
+pypluginAdmissioner_params {
+  py::object data;  ///< Plugin's internal data structure (python object)
+  py::function admissioner_init_hook;
+  py::function admissioner_admit_hook;
+  py::function admissioner_clone_hook;
+  py::function admissioner_update_hook;
+  py::function admissioner_free_hook;
+  std::string admissioner_name;
+} pypluginAdmissioner_params_t;
+
+static bool pypluginAdmissioner_admit(admissioner_t *, const request_t *);
+static admissioner_t *pypluginAdmissioner_clone(admissioner_t *);
+static void pypluginAdmissioner_free(admissioner_t *);
+static void pypluginAdmissioner_update(admissioner_t *, const request_t *, const uint64_t);
+
+// TODO: Free hook is currently not invoked at all, see export_cache.cpp and follow
+// their implementation pattern of using a custom deleter alongside std::unique_ptr
+admissioner_t *create_plugin_admissioner(std::string admissioner_name,
+                                        py::function admissioner_init_hook,
+                                        py::function admissioner_admit_hook,
+                                        py::function admissioner_clone_hook,
+                                        py::function admissioner_update_hook,
+                                        py::function admissioner_free_hook) {
+  admissioner_t *admissioner = nullptr;
+  try{
+    admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
+    if (!admissioner) {
+      throw std::runtime_error("Failed to initialize admissioner structure");
+    }
+    memset(admissioner, 0, sizeof(admissioner_t));
+
+    // We will pass a raw pointer for C++ to take ownership of
+    admissioner->admit = pypluginAdmissioner_admit;
+    admissioner->clone = pypluginAdmissioner_clone;
+    admissioner->free = pypluginAdmissioner_free;
+    admissioner->update = pypluginAdmissioner_update;
+
+    // Initialize pointers to python hook functions
+    std::unique_ptr<pypluginAdmissioner_params_t> params =
+        std::make_unique<pypluginAdmissioner_params_t>(
+            pypluginAdmissioner_params_t());
+    params->data = admissioner_init_hook();
+    params->admissioner_admit_hook = admissioner_admit_hook;
+    params->admissioner_clone_hook = admissioner_clone_hook;
+    params->admissioner_update_hook = admissioner_update_hook;
+    params->admissioner_free_hook = admissioner_free_hook;
+    params->admissioner_name = admissioner_name;
+
+    // Transfer ownership of params to admissioner
+    admissioner->params = params.release();
+    return admissioner;
+
+  } catch (...) {
+    if (admissioner)
+      free(admissioner);
+    throw;
+  }
+}
+
+static bool pypluginAdmissioner_admit(admissioner_t *admissioner, const request_t *req) {
+  pypluginAdmissioner_params_t* params =
+      (pypluginAdmissioner_params_t*)admissioner->params;
+  return params->admissioner_admit_hook(params->data, req).cast<bool>();
+}
+
+static admissioner_t *pypluginAdmissioner_clone(admissioner_t *admissioner) {
+  pypluginAdmissioner_params_t* params =
+      (pypluginAdmissioner_params_t*)admissioner->params;
+  return params->admissioner_clone_hook(params->data).cast<admissioner_t *>();
+}
+
+static void pypluginAdmissioner_free(admissioner_t *admissioner) {
+  pypluginAdmissioner_params_t* params =
+      (pypluginAdmissioner_params_t*)admissioner->params;
+  params->admissioner_free_hook(params->data);
+}
+
+static void pypluginAdmissioner_update(admissioner_t *admissioner,
+                                       const request_t *req,
+                                       const uint64_t cache_size) {
+  pypluginAdmissioner_params_t* params =
+      (pypluginAdmissioner_params_t*)admissioner->params;
+  params->admissioner_update_hook(params->data, req, cache_size);
+}
+
 template <admissioner_t *(*fn)(const char *)>
 void export_admissioner_creator(py::module &m, const std::string &name) {
   m.def(
@@ -107,6 +193,7 @@ void export_admissioner(py::module &m) {
   // ****                                                               ****
   // ***********************************************************************
 
+  // Exposing existing implementations of admission algorithms
   export_admissioner_creator<create_bloomfilter_admissioner>(
       m, "create_bloomfilter_admissioner");
   export_admissioner_creator<create_prob_admissioner>(
@@ -117,6 +204,18 @@ void export_admissioner(py::module &m) {
       m, "create_size_probabilistic_admissioner");
   export_admissioner_creator<create_adaptsize_admissioner>(
       m, "create_adaptsize_admissioner");
+
+  m.def(
+    "create_plugin_admissioner",
+    &create_plugin_admissioner,
+    "admissioner_name",
+    "admissioner_init_hook",
+    "admissioner_admit_hook",
+    "admissioner_clone_hook",
+    "admissioner_update_hook",
+    "admissioner_free_hook",
+    py::return_value_policy::take_ownership
+  );
 }
 
 }  // namespace libcachesim
