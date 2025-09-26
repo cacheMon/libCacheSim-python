@@ -273,7 +273,7 @@ void export_cache(py::module& m) {
       .def_readonly("n_req", &cache_t::n_req)
       .def_readonly("cache_name", &cache_t::cache_name)
       .def_readonly("init_params", &cache_t::init_params)
-      .def_readwrite("admissioner", &cache::admissioner)
+      .def_readwrite("admissioner", &cache_t::admissioner)
       .def(
           "get",
           [](cache_t& self, const request_t& req) {

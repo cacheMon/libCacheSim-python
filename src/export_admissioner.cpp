@@ -219,9 +219,10 @@ void export_admissioner(py::module &m) {
   export_admissioner_creator<create_adaptsize_admissioner>(
       m, "create_adaptsize_admissioner");
   m.def("create_plugin_admissioner", &create_plugin_admissioner,
-        "admissioner_name", "admissioner_init_hook", "admissioner_admit_hook",
-        "admissioner_clone_hook", "admissioner_update_hook",
-        "admissioner_free_hook", py::return_value_policy::take_ownership);
+        "admissioner_name"_a, "admissioner_init_hook"_a,
+        "admissioner_admit_hook"_a, "admissioner_clone_hook"_a,
+        "admissioner_update_hook"_a, "admissioner_free_hook"_a,
+        py::return_value_policy::take_ownership);
 }
 
 }  // namespace libcachesim
