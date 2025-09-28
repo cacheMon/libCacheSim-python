@@ -27,6 +27,8 @@ def cache_remove_hook(data: CustomizedCacheData, obj_id: int | str) ->: ...
 def cache_free_hook(data: CustomizedCacheData) ->: ...
 ```
 
+- **Note:** `CustomizedCacheData` is not a type provided by the library. It simply represents what ever object the user decides to return from `cache_init_hook` and pass to the other hook functions as `data`.
+
 ## PluginAdmissioner
 
 We enable users to define their own admission policies via libCacheSim's plugin system, which can be used in conjunction with existing cache implementations (e.g., `LRU`, `S3FIFO`).
@@ -51,3 +53,5 @@ def admissioner_update_hook(data: CustomizedAdmissionerData, req: Request, cache
 def admissioner_clone_hook(data: CustomizedAdmissionerData) -> AdmissionerBase: ...
 def admissioner_free_hook(data: CustomizedAdmissionerData) -> None: ...
 ```
+
+- **Note:** `CustomizedAdmissionerData` is not a type provided by the library. It simply represents what ever object the user decides to return from `admissioner_init_hook` and pass to the other hook functions as `data`.
