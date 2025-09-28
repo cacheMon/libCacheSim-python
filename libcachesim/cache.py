@@ -556,8 +556,8 @@ class BeladySize(CacheBase):
             _cache=BeladySize_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
                 cache_specific_params,
-                admissioner=admissioner
-            )
+            ),
+            admissioner=admissioner
         )
 
 
@@ -700,8 +700,8 @@ class ThreeLCache(CacheBase):
             _cache=ThreeLCache_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
                 cache_specific_params,
-                admissioner=admissioner
-            )
+            ),
+            admissioner=admissioner
         )
 
 
@@ -746,8 +746,8 @@ class GLCache(CacheBase):
             _cache=GLCache_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
                 cache_specific_params,
-                admissioner=admissioner
-            )
+            ),
+            admissioner=admissioner
         )
 
 
@@ -780,8 +780,8 @@ class LRB(CacheBase):
             _cache=LRB_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
                 cache_specific_params,
-                admissioner=admissioner
-            )
+            ),
+            admissioner=admissioner
         )
 
 

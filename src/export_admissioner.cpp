@@ -135,7 +135,7 @@ void export_admissioner_creator(py::module &m, const std::string &name) {
         // Admissioner is exported lower down
         admissioner_t *admissioner = fn(params);
         if (!admissioner)
-          throw std::runtime_error("Creater for " + name + " returned NULL");
+          throw std::runtime_error("Creator for " + name + " returned NULL");
         return admissioner;
       },
       py::return_value_policy::reference);
