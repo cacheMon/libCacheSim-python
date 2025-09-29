@@ -56,6 +56,16 @@ from .cache import (
     PluginCache,
 )
 
+from .admissioner import (
+    BloomFilterAdmissioner,
+    ProbAdmissioner,
+    SizeAdmissioner,
+    SizeProbabilisticAdmissioner,
+    AdaptSizeAdmissioner,
+    PluginAdmissioner,
+    AdmissionerBase,
+)
+
 from .trace_reader import TraceReader
 from .trace_analyzer import TraceAnalyzer
 from .synthetic_reader import SyntheticReader, create_zipf_requests, create_uniform_requests
@@ -110,6 +120,15 @@ __all__ = [
     "LRB",
     # Plugin cache
     "PluginCache",
+    # Admission algorithms
+    "BloomFilterAdmissioner",
+    "ProbAdmissioner",
+    "SizeAdmissioner",
+    "SizeProbabilisticAdmissioner",
+    "AdaptSizeAdmissioner",
+    "PluginAdmissioner",
+    # Admissioner base class
+    "AdmissionerBase",
     # Readers and analyzers
     "TraceReader",
     "TraceAnalyzer",

@@ -252,6 +252,7 @@ include_directories(${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin)
 set(PYTHON_MODULE_SOURCES
     src/export.cpp
     src/export_cache.cpp
+    src/export_admissioner.cpp
     src/export_reader.cpp
     src/export_analyzer.cpp
     src/export_misc.cpp

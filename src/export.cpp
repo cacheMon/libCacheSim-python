@@ -21,6 +21,7 @@ PYBIND11_MODULE(libcachesim_python, m) {
   // methods if the codebase is large enough
 
   export_cache(m);
+  export_admissioner(m);
   export_reader(m);
   export_analyzer(m);
   export_misc(m);

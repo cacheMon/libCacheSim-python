@@ -41,6 +41,7 @@ from .libcachesim_python import (
     c_process_trace,
 )
 
+from .admissioner import AdmissionerBase
 from .protocols import ReaderProtocol
 
 
@@ -49,7 +50,9 @@ class CacheBase(ABC):
 
     _cache: Cache  # Internal C++ cache object
 
-    def __init__(self, _cache: Cache):
+    def __init__(self, _cache: Cache, admissioner: AdmissionerBase = None):
+        if admissioner is not None:
+            _cache.admissioner = admissioner._admissioner
         self._cache = _cache
 
     def get(self, req: Request) -> bool:
@@ -81,7 +84,7 @@ class CacheBase(ABC):
 
     def get_n_obj(self) -> int:
         return self._cache.get_n_obj()
-    
+
     def set_cache_size(self, new_size: int) -> None:
         self._cache.set_cache_size(new_size)
 
@@ -160,10 +163,16 @@ class LHD(CacheBase):
     """Least Hit Density cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=LHD_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LHD_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -171,10 +180,16 @@ class LRU(CacheBase):
     """Least Recently Used cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=LRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -182,10 +197,16 @@ class FIFO(CacheBase):
     """First In First Out cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=FIFO_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=FIFO_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -193,10 +214,16 @@ class LFU(CacheBase):
     """Least Frequently Used cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=LFU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LFU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -204,10 +231,16 @@ class ARC(CacheBase):
     """Adaptive Replacement Cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=ARC_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=ARC_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -227,12 +260,15 @@ class Clock(CacheBase):
         consider_obj_metadata: bool = False,
         init_freq: int = 0,
         n_bit_counter: int = 1,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"init-freq={init_freq}, n-bit-counter={n_bit_counter}"
         super().__init__(
             _cache=Clock_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -240,10 +276,16 @@ class Random(CacheBase):
     """Random replacement cache (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=Random_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Random_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -266,12 +308,12 @@ class S3FIFO(CacheBase):
         small_size_ratio: float = 0.1,
         ghost_size_ratio: float = 0.9,
         move_to_main_threshold: int = 2,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"small-size-ratio={small_size_ratio}, ghost-size-ratio={ghost_size_ratio}, move-to-main-threshold={move_to_main_threshold}"
         super().__init__(
-            _cache=S3FIFO_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+            _cache=S3FIFO_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params),
+            admissioner=admissioner
         )
 
 
@@ -279,10 +321,16 @@ class Sieve(CacheBase):
     """Sieve cache algorithm (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=Sieve_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Sieve_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -290,10 +338,16 @@ class LIRS(CacheBase):
     """Low Inter-reference Recency Set (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=LIRS_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LIRS_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
     def insert(self, req: Request) -> Optional[CacheObject]:
@@ -316,12 +370,15 @@ class TwoQ(CacheBase):
         consider_obj_metadata: bool = False,
         a_in_size_ratio: float = 0.25,
         a_out_size_ratio: float = 0.5,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"Ain-size-ratio={a_in_size_ratio}, Aout-size-ratio={a_out_size_ratio}"
         super().__init__(
             _cache=TwoQ_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -329,10 +386,16 @@ class SLRU(CacheBase):
     """Segmented LRU (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=SLRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=SLRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -352,12 +415,15 @@ class WTinyLFU(CacheBase):
         consider_obj_metadata: bool = False,
         main_cache: str = "SLRU",
         window_size: float = 0.01,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"main-cache={main_cache}, window-size={window_size}"
         super().__init__(
             _cache=WTinyLFU_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -377,12 +443,15 @@ class LeCaR(CacheBase):
         consider_obj_metadata: bool = False,
         update_weight: bool = True,
         lru_weight: float = 0.5,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"update-weight={int(update_weight)}, lru-weight={lru_weight}"
         super().__init__(
             _cache=LeCaR_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -390,10 +459,16 @@ class LFUDA(CacheBase):
     """LFU with Dynamic Aging (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=LFUDA_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=LFUDA_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -413,12 +488,15 @@ class ClockPro(CacheBase):
         consider_obj_metadata: bool = False,
         init_ref: int = 0,
         init_ratio_cold: float = 0.5,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"init-ref={init_ref}, init-ratio-cold={init_ratio_cold}"
         super().__init__(
             _cache=ClockPro_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -426,10 +504,16 @@ class Cacheus(CacheBase):
     """Cacheus algorithm (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=Cacheus_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Cacheus_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -438,10 +522,16 @@ class Belady(CacheBase):
     """Belady's optimal algorithm (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=Belady_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Belady_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -459,12 +549,15 @@ class BeladySize(CacheBase):
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
         n_samples: int = 128,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"n-samples={n_samples}"
         super().__init__(
             _cache=BeladySize_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -482,12 +575,15 @@ class LRUProb(CacheBase):
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
         prob: float = 0.5,
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"prob={prob}"
         super().__init__(
             _cache=LRU_Prob_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -511,12 +607,15 @@ class FlashProb(CacheBase):
         disk_admit_prob: float = 0.2,
         ram_cache: str = "LRU",
         disk_cache: str = "FIFO",
+        admissioner: AdmissionerBase = None,
     ):
         cache_specific_params = f"ram-size-ratio={ram_size_ratio}, disk-admit-prob={disk_admit_prob}, ram-cache={ram_cache}, disk-cache={disk_cache}"
         super().__init__(
             _cache=flashProb_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -524,10 +623,16 @@ class Size(CacheBase):
     """Size-based replacement algorithm (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=Size_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Size_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -535,10 +640,16 @@ class GDSF(CacheBase):
     """GDSF replacement algorithm (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=GDSF_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=GDSF_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -546,10 +657,16 @@ class Hyperbolic(CacheBase):
     """Hyperbolic replacement algorithm (no special parameters)"""
 
     def __init__(
-        self, cache_size: int, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False
+        self,
+        cache_size: int,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         super().__init__(
-            _cache=Hyperbolic_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata))
+            _cache=Hyperbolic_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)),
+            admissioner=admissioner
         )
 
 
@@ -568,6 +685,7 @@ class ThreeLCache(CacheBase):
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
         objective: str = "byte-miss-ratio",
+        admissioner: AdmissionerBase = None,
     ):
         # Try to import ThreeLCache_init
         try:
@@ -580,8 +698,10 @@ class ThreeLCache(CacheBase):
         cache_specific_params = f"objective={objective}"
         super().__init__(
             _cache=ThreeLCache_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -611,6 +731,7 @@ class GLCache(CacheBase):
         merge_consecutive_segs: bool = True,
         train_source_y: str = "online",
         retrain_intvl: int = 86400,
+        admissioner: AdmissionerBase = None,
     ):
         # Try to import GLCache_init
         try:
@@ -623,8 +744,10 @@ class GLCache(CacheBase):
         cache_specific_params = f"segment-size={segment_size}, n-merge={n_merge}, type={type}, rank-intvl={rank_intvl}, merge-consecutive-segs={merge_consecutive_segs}, train-source-y={train_source_y}, retrain-intvl={retrain_intvl}"
         super().__init__(
             _cache=GLCache_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -642,6 +765,7 @@ class LRB(CacheBase):
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
         objective: str = "byte-miss-ratio",
+        admissioner: AdmissionerBase = None,
     ):
         # Try to import LRB_init
         try:
@@ -654,8 +778,10 @@ class LRB(CacheBase):
         cache_specific_params = f"objective={objective}"
         super().__init__(
             _cache=LRB_init(
-                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata), cache_specific_params
-            )
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
         )
 
 
@@ -676,6 +802,7 @@ class PluginCache(CacheBase):
         default_ttl: int = 86400 * 300,
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
+        admissioner: AdmissionerBase = None,
     ):
         self.common_cache_params = _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata)
 
@@ -689,5 +816,6 @@ class PluginCache(CacheBase):
                 cache_eviction_hook,
                 cache_remove_hook,
                 cache_free_hook,
-            )
+            ),
+            admissioner=admissioner
         )
