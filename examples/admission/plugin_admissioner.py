@@ -26,7 +26,7 @@ def admit_hook(data, request):
 
 
 def clone_hook():
-    pass
+    raise NotImplementedError("Cloning for this plugin admissioner is not supported.")
 
 
 def update_hook(data, request, cs):
