@@ -109,7 +109,7 @@ Here is an example demonstrating how to use `TraceAnalyzer`.
     # Step 1: Get one trace from S3 bucket
     URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
     reader = lcs.TraceReader(
-        trace = dl.get_cache_path(URI),
+        trace = URI,
         trace_type = lcs.TraceType.ORACLE_GENERAL_TRACE,
         reader_init_params = lcs.ReaderInitParam(ignore_obj_size=False)
     )
@@ -140,10 +140,10 @@ Here is an example demonstrating how to use `TraceAnalyzer`.
 The above code demonstrates how to perform trace analysis using `libcachesim`. The workflow is as follows:
 
 1. Open the trace file with `TraceReader`, specifying the trace type and any reader initialization parameters. The URI starting with `s3://`, will download a trace file from an S3 bucket.
-3. Configure the analysis options with `AnalysisOption` to enable or disable specific analyses (such as request rate, size, etc.).
-4. Optionally, set additional analysis parameters with `AnalysisParam`.
-5. Create a `TraceAnalyzer` object with the reader, output directory, and the chosen options and parameters.
-6. Run the analysis with `analyzer.run()`.
+2. Configure the analysis options with `AnalysisOption` to enable or disable specific analyses (such as request rate, size, etc.).
+3. Optionally, set additional analysis parameters with `AnalysisParam`.
+4. Create a `TraceAnalyzer` object with the reader, output directory, and the chosen options and parameters.
+5. Run the analysis with `analyzer.run()`.
 
 After running, you can access the analysis results, such as summary statistics (`stat`) or detailed results (e.g., `example_analysis.size`).
 
