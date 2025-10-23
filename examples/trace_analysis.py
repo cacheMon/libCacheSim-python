@@ -1,12 +1,10 @@
 import libcachesim as lcs
 
 # Step 1: Get one trace from S3 bucket
-URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
-dl = lcs.DataLoader()
-dl.load(URI)
+URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
 
 reader = lcs.TraceReader(
-    trace=dl.get_cache_path(URI),
+    trace=URI,
     trace_type=lcs.TraceType.ORACLE_GENERAL_TRACE,
     reader_init_params=lcs.ReaderInitParam(ignore_obj_size=False),
 )

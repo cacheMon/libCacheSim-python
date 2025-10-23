@@ -193,17 +193,16 @@ cache = PluginCache(
     cache_name="S3FIFO",
 )
 
-URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
-dl = lcs.DataLoader()
-dl.load(URI)
+URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
 
-# Step 2: Open trace and process efficiently
+# Open trace
 reader = lcs.TraceReader(
-    trace=dl.get_cache_path(URI),
+    trace=URI,
     trace_type=lcs.TraceType.ORACLE_GENERAL_TRACE,
     reader_init_params=lcs.ReaderInitParam(ignore_obj_size=True),
 )
 
+# Use native S3FIFO for reference
 ref_s3fifo = S3FIFO(cache_size=1024, small_size_ratio=0.1, ghost_size_ratio=0.9, move_to_main_threshold=2)
 
 # for req in reader:

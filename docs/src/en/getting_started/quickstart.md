@@ -91,11 +91,10 @@ With libcachesim installed, you can start cache simulation for some eviction alg
 
 The above example demonstrates the basic workflow of using `libcachesim` for cache simulation:
 
-1. Use `DataLoader` to download a cache trace file from an S3 bucket.
-2. Open and efficiently process the trace file with `TraceReader`.
-3. Initialize a cache object (here, `S3FIFO`) with a specified cache size (e.g., 1MB).
-4. Run the simulation on the entire trace using `process_trace` to obtain object and byte miss ratios.
-5. Optionally, process only a portion of the trace by specifying `start_req` and `max_req` for partial simulation.
+1. Open and efficiently process the trace file with `TraceReader`.
+2. Initialize a cache object (here, `S3FIFO`) with a specified cache size (e.g., 1MB).
+3. Run the simulation on the entire trace using `process_trace` to obtain object and byte miss ratios.
+4. Optionally, process only a portion of the trace by specifying `start_req` and `max_req` for partial simulation.
 
 This workflow applies to most cache algorithms and trace types, making it easy to get started and customize your experiments.
 
@@ -108,10 +107,7 @@ Here is an example demonstrating how to use `TraceAnalyzer`.
     import libcachesim as lcs
 
     # Step 1: Get one trace from S3 bucket
-    URI = "cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
-    dl = lcs.DataLoader()
-    dl.load(URI)
-
+    URI = "s3://cache-datasets/cache_dataset_oracleGeneral/2007_msr/msr_hm_0.oracleGeneral.zst"
     reader = lcs.TraceReader(
         trace = dl.get_cache_path(URI),
         trace_type = lcs.TraceType.ORACLE_GENERAL_TRACE,
@@ -143,8 +139,7 @@ Here is an example demonstrating how to use `TraceAnalyzer`.
 
 The above code demonstrates how to perform trace analysis using `libcachesim`. The workflow is as follows:
 
-1. Download a trace file from an S3 bucket using `DataLoader`.
-2. Open the trace file with `TraceReader`, specifying the trace type and any reader initialization parameters.
+1. Open the trace file with `TraceReader`, specifying the trace type and any reader initialization parameters. The URI starting with `s3://`, will download a trace file from an S3 bucket.
 3. Configure the analysis options with `AnalysisOption` to enable or disable specific analyses (such as request rate, size, etc.).
 4. Optionally, set additional analysis parameters with `AnalysisParam`.
 5. Create a `TraceAnalyzer` object with the reader, output directory, and the chosen options and parameters.

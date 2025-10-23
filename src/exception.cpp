@@ -21,9 +21,9 @@ void register_exception(py::module& m) {
     try {
       if (p) std::rethrow_exception(p);
     } catch (const CacheException& e) {
-      exc_cache(e.what());
+      py::set_error(exc_cache, e.what());
     } catch (const ReaderException& e) {
-      exc_reader(e.what());
+      py::set_error(exc_reader, e.what());
     }
   });
 
