@@ -1,7 +1,7 @@
 # libCacheSim Python Binding
 
 [![Build](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml)
-[![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)]([docs.libcachesim.com/python](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml))
+[![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml)
 
 
 libCacheSim is fast with the features from [underlying libCacheSim lib](https://github.com/1a1a11a/libCacheSim):
