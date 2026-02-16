@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import bool, int, str, tuple, Optional, Callable
+from typing import Optional, Callable, Any
 from collections.abc import Iterator
 
 from .libcachesim_python import ReqOp, TraceType, SamplerType
@@ -72,7 +72,7 @@ class ReaderInitParam:
         has_header_set: bool = False,
         delimiter: str = ",",
         trace_start_offset: int = 0,
-        sampler = None,
+        sampler: Optional[Any] = None,
     ): ...
 
 class AnalysisParam:
@@ -161,143 +161,143 @@ class CacheBase:
 # Core cache algorithms
 class LHD(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class LRU(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class FIFO(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class LFU(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class ARC(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class Clock(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, init_freq: int = 0, n_bit_counter: int = 1, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, init_freq: int = 0, n_bit_counter: int = 1, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class Random(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Advanced algorithms
 class S3FIFO(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, small_size_ratio: float = 0.1, ghost_size_ratio: float = 0.9, move_to_main_threshold: int = 2, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, small_size_ratio: float = 0.1, ghost_size_ratio: float = 0.9, move_to_main_threshold: int = 2, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class Sieve(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class LIRS(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class TwoQ(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, a_in_size_ratio: float = 0.25, a_out_size_ratio: float = 0.5, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, a_in_size_ratio: float = 0.25, a_out_size_ratio: float = 0.5, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class SLRU(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class WTinyLFU(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, main_cache: str = "SLRU", window_size: float = 0.01, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, main_cache: str = "SLRU", window_size: float = 0.01, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class LeCaR(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, update_weight: bool = True, lru_weight: float = 0.5, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, update_weight: bool = True, lru_weight: float = 0.5, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class LFUDA(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class ClockPro(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, init_ref: int = 0, init_ratio_cold: float = 0.5, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, init_ref: int = 0, init_ratio_cold: float = 0.5, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class Cacheus(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Optimal algorithms
 class Belady(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class BeladySize(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, n_samples: int = 128, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, n_samples: int = 128, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Probabilistic algorithms
 class LRUProb(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, prob: float = 0.5, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, prob: float = 0.5, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class FlashProb(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, ram_size_ratio: float = 0.05, disk_admit_prob: float = 0.2, ram_cache: str = "LRU", disk_cache: str = "FIFO", admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, ram_size_ratio: float = 0.05, disk_admit_prob: float = 0.2, ram_cache: str = "LRU", disk_cache: str = "FIFO", admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Size-based algorithms
 class Size(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class GDSF(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Hyperbolic algorithms
 class Hyperbolic(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Extra deps
 class ThreeLCache(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, objective: str = "byte-miss-ratio", admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, objective: str = "byte-miss-ratio", admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class GLCache(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, segment_size: int = 100, n_merge: int = 2, type: str = "learned", rank_intvl: float = 0.02, merge_consecutive_segs: bool = True, train_source_y: str = "online", retrain_intvl: int = 86400, admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, segment_size: int = 100, n_merge: int = 2, type: str = "learned", rank_intvl: float = 0.02, merge_consecutive_segs: bool = True, train_source_y: str = "online", retrain_intvl: int = 86400, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class LRB(CacheBase):
     def __init__(
-        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, objective: str = "byte-miss-ratio", admissioner = None, reader: Optional[ReaderProtocol] = None
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, objective: str = "byte-miss-ratio", admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 # Plugin cache
@@ -315,7 +315,7 @@ class PluginCache(CacheBase):
         default_ttl: int = 25920000,
         hashpower: int = 24,
         consider_obj_metadata: bool = False,
-        admissioner = None,
+        admissioner: Optional["AdmissionerBase"] = None,
         reader: Optional[ReaderProtocol] = None,
     ): ...
     def set_hooks(self, init_hook, hit_hook, miss_hook, eviction_hook, remove_hook, free_hook=None): ...

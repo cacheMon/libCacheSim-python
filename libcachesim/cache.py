@@ -54,7 +54,7 @@ class CacheBase(ABC):
 
     _cache: Cache  # Internal C++ cache object
 
-    def __init__(self, _cache: Cache, admissioner: AdmissionerBase = None, reader: ReaderProtocol = None):
+    def __init__(self, _cache: Cache, admissioner: AdmissionerBase = None):
         if admissioner is not None:
             _cache.admissioner = admissioner._admissioner
         self._cache = _cache
@@ -152,14 +152,36 @@ def _create_common_params(
     cache_size: int | float, default_ttl: int = 86400 * 300, hashpower: int = 24, consider_obj_metadata: bool = False,
     reader: ReaderProtocol = None
 ) -> CommonCacheParams:
-    """Helper to create common cache parameters"""
+    """Helper to create common cache parameters.
+    
+    If ``cache_size`` is provided as a float, it is interpreted as a ratio
+    (0 < cache_size <= 1) of the total working set size in bytes as
+    returned by ``reader.get_working_set_size()``.
+    """
+    if cache_size <= 0:
+        raise ValueError(f"cache_size must be positive; got {cache_size!r}")
+
     if isinstance(cache_size, float):
-        logger.debug(f"Cache size provided as float {cache_size}, interpreting as bytes")
+        if not (0 < cache_size <= 1):
+            raise ValueError(
+                f"When provided as a float, cache_size is interpreted as a ratio "
+                f"of total working set bytes and must satisfy 0 < cache_size <= 1; "
+                f"got {cache_size!r}"
+            )
+        logger.debug(
+            f"Cache size provided as float {cache_size}, interpreting as ratio of total working set bytes"
+        )
         if reader is None:
-            raise ValueError("Cache size provided as float but no trace provided to determine total size")
+            raise ValueError(
+                "Cache size provided as float ratio but no trace reader provided "
+                "to determine total working set size"
+            )
         total_wss_bytes = reader.get_working_set_size()[1]
         cache_size_bytes = int(cache_size * total_wss_bytes)
-        logger.debug(f"Interpreted cache size as {cache_size_bytes} bytes based on total working set size of {total_wss_bytes} bytes")
+        logger.debug(
+            f"Interpreted cache size ratio {cache_size} as {cache_size_bytes} bytes "
+            f"based on total working set size of {total_wss_bytes} bytes"
+        )
         cache_size = cache_size_bytes
 
     return CommonCacheParams(

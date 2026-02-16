@@ -63,13 +63,15 @@ reader = lcs.TraceReader(
 )
 
 # Step 2: Initialize cache
+# Note: cache_size as float (0.1) means 10% of the reader's total working set size in bytes.
+# To specify an absolute size, pass an integer (e.g., 1024*1024 for 1MB).
 cache = lcs.S3FIFO(
-    cache_size=0.1,
+    cache_size=0.1,  # 0.1 = 10% of trace's working set size (requires reader parameter)
     # Cache specific parameters
     small_size_ratio=0.2,
     ghost_size_ratio=0.8,
     move_to_main_threshold=2,
-    reader=reader,
+    reader=reader,  # Required when cache_size is a float ratio
 )
 
 # Step 3: Process entire trace efficiently (C++ backend)
@@ -77,13 +79,14 @@ req_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
 print(f"Request miss ratio: {req_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
 
 # Step 3.1: Process the first 1000 requests
+# Note: cache_size as float means a ratio of the working set size (requires reader parameter)
 cache = lcs.S3FIFO(
-    cache_size=0.1,
+    cache_size=0.1,  # 10% of trace's working set size
     # Cache specific parameters
     small_size_ratio=0.2,
     ghost_size_ratio=0.8,
     move_to_main_threshold=2,
-    reader=reader,
+    reader=reader,  # Required when cache_size is a float ratio
 )
 req_miss_ratio, byte_miss_ratio = cache.process_trace(reader, start_req=0, max_req=1000)
 print(f"Request miss ratio: {req_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
