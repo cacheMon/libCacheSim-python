@@ -42,19 +42,31 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-python scripts/sync_version.py
-CMAKE_ARGS=$CMAKE_ARGS python -m pip install -e . -vvv
+# Detect Python command
+PYTHON_CMD=""
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
+    echo "Error: python is not installed. Please install Python 3 and try again."
+    exit 1
+fi
+
+echo "Using Python command: $PYTHON_CMD"
+$PYTHON_CMD scripts/sync_version.py
+CMAKE_ARGS=$CMAKE_ARGS $PYTHON_CMD -m pip install -e . -vvv
 
 # Test that the import works
 echo "Testing import..."
-python -c "import libcachesim"
+$PYTHON_CMD -c "import libcachesim"
 
 # Run tests
-python -m pip install pytest
-python -m pytest tests
+$PYTHON_CMD -m pip install pytest
+$PYTHON_CMD -m pytest tests
 if [[ "$CMAKE_ARGS" == *"-DENABLE_LRB=ON"* && "$CMAKE_ARGS" == *"-DENABLE_GLCACHE=ON"* && "$CMAKE_ARGS" == *"-DENABLE_3L_CACHE=ON"* ]]; then
     echo "Running tests for optional eviction algos..."
-    python -m pytest tests -m "optional"
+    $PYTHON_CMD -m pytest tests -m "optional"
 fi
 
 # Build wheels if requested

@@ -540,3 +540,15 @@ class TestCacheOptionalAlgorithms:
 
         cache = ThreeLCache(1024)
         assert cache is not None
+
+    def test_fractional_cache_size(self):
+        """Test initializing cache with fractional size"""
+        # Create a trace, ignore obj size
+        trace = SyntheticReader(num_of_req=10000, obj_size=1, dist="uniform", num_objects=1000, seed=42)
+        cache = LRU(0.5, reader=trace) 
+        assert cache.cache_size == 500
+
+        # with obj size
+        trace = SyntheticReader(num_of_req=10000, obj_size=100, dist="uniform", num_objects=1000, seed=42)
+        cache = LRU(0.5, reader=trace)
+        assert cache.cache_size == 500 * 100
