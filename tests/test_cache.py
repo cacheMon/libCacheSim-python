@@ -546,9 +546,9 @@ class TestCacheOptionalAlgorithms:
         # Create a trace, ignore obj size
         trace = SyntheticReader(num_of_req=10000, obj_size=1, dist="uniform", num_objects=1000, seed=42)
         cache = LRU(0.5, reader=trace) 
-        assert cache.cache_size == 500
+        assert cache.cache_size == 0.5 * trace.get_working_set_size()[1]
 
         # with obj size
         trace = SyntheticReader(num_of_req=10000, obj_size=100, dist="uniform", num_objects=1000, seed=42)
         cache = LRU(0.5, reader=trace)
-        assert cache.cache_size == 500 * 100
+        assert cache.cache_size == 0.5 * trace.get_working_set_size()[1]

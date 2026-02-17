@@ -158,8 +158,8 @@ def _create_common_params(
     (0 < cache_size <= 1) of the total working set size in bytes as
     returned by ``reader.get_working_set_size()``.
     """
-    if cache_size <= 0:
-        raise ValueError(f"cache_size must be positive; got {cache_size!r}")
+    if cache_size < 0:
+        raise ValueError(f"cache_size must be non-negative; got {cache_size!r}")
 
     if isinstance(cache_size, float):
         if not (0 < cache_size <= 1):
