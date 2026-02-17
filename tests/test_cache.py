@@ -545,7 +545,7 @@ class TestCacheOptionalAlgorithms:
         """Test initializing cache with fractional size"""
         # Create a trace, ignore obj size
         trace = SyntheticReader(num_of_req=10000, obj_size=1, dist="uniform", num_objects=1000, seed=42)
-        cache = LRU(0.5, reader=trace) 
+        cache = LRU(0.5, reader=trace)
         assert cache.cache_size == 0.5 * trace.get_working_set_size()[1]
 
         # with obj size
