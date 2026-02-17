@@ -42,19 +42,31 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-python scripts/sync_version.py
-CMAKE_ARGS=$CMAKE_ARGS python -m pip install -e . -vvv
+# Detect Python command
+PYTHON_CMD=""
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+else
+    echo "Error: python is not installed. Please install Python 3 and try again."
+    exit 1
+fi
+
+echo "Using Python command: $PYTHON_CMD"
+$PYTHON_CMD scripts/sync_version.py
+CMAKE_ARGS=$CMAKE_ARGS $PYTHON_CMD -m pip install -e . -vvv
 
 # Test that the import works
 echo "Testing import..."
-python -c "import libcachesim"
+$PYTHON_CMD -c "import libcachesim"
 
 # Run tests
-python -m pip install pytest
-python -m pytest tests
+$PYTHON_CMD -m pip install pytest
+$PYTHON_CMD -m pytest tests
 if [[ "$CMAKE_ARGS" == *"-DENABLE_LRB=ON"* && "$CMAKE_ARGS" == *"-DENABLE_GLCACHE=ON"* && "$CMAKE_ARGS" == *"-DENABLE_3L_CACHE=ON"* ]]; then
     echo "Running tests for optional eviction algos..."
-    python -m pytest tests -m "optional"
+    $PYTHON_CMD -m pytest tests -m "optional"
 fi
 
 # Build wheels if requested
@@ -64,26 +76,26 @@ if [[ $BUILD_WHEELS -eq 1 ]]; then
     # --- Environment and dependency checks ---
     echo "Checking dependencies: python3, pip, docker, cibuildwheel..."
 
-    if ! command -v python3 &> /dev/null; then
+    if ! command -v python3 >/dev/null 2>&1; then
         echo "Error: python3 is not installed. Please install it and run this script again."
         exit 1
     fi
 
-    if ! python3 -m pip --version &> /dev/null; then
+    if ! python3 -m pip --version >/dev/null 2>&1; then
         echo "Error: pip for python3 is not available. Please install it."
         exit 1
     fi
 
-    if ! command -v docker &> /dev/null; then
+    if ! command -v docker >/dev/null 2>&1; then
         echo "Error: docker is not installed. Please install it and ensure the docker daemon is running."
         exit 1
     fi
 
     # Check if user can run docker without sudo, otherwise use sudo
     SUDO_CMD=""
-    if ! docker ps &> /dev/null; then
+    if ! docker ps >/dev/null 2>&1; then
         echo "Warning: Current user cannot run docker. Trying with sudo."
-        if sudo docker ps &> /dev/null; then
+        if sudo docker ps >/dev/null 2>&1; then
             SUDO_CMD="sudo"
         else
             echo "Error: Failed to run docker, even with sudo. Please check your docker installation and permissions."
@@ -91,7 +103,7 @@ if [[ $BUILD_WHEELS -eq 1 ]]; then
         fi
     fi
 
-    if ! python3 -m cibuildwheel --version &> /dev/null; then
+    if ! python3 -m cibuildwheel --version >/dev/null 2>&1; then
         echo "cibuildwheel not found, installing..."
         python3 -m pip install cibuildwheel
     fi
