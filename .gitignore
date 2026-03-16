@@ -18,6 +18,13 @@ lib/
 lib64/
 parts/
 sdist/
+
+# Profiling results
+profiling_*results/
+profile_*.txt
+profile_*.json
+profile_*.csv
+performance_report_*.txt
 var/
 wheels/
 share/python-wheels/
