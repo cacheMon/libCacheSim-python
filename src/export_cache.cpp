@@ -167,6 +167,7 @@ static void pypluginCache_free(cache_t* cache) {
   if (!cache) {
     return;
   }
+  py::gil_scoped_acquire acquire;
   if (!cache->eviction_params) {
     // No params, just free the cache structure
     cache_struct_free(cache);
@@ -183,8 +184,8 @@ static void pypluginCache_free(cache_t* cache) {
 }
 
 static bool pypluginCache_get(cache_t* cache, const request_t* req) {
-  py::gil_scoped_acquire acquire;
   bool hit = cache_get_base(cache, req);
+  py::gil_scoped_acquire acquire;
   pypluginCache_params_t* params =
       (pypluginCache_params_t*)cache->eviction_params;
 
