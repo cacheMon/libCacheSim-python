@@ -107,6 +107,7 @@ cache_t* pypluginCache_init(
     py::function cache_init_hook, py::function cache_hit_hook,
     py::function cache_miss_hook, py::function cache_eviction_hook,
     py::function cache_remove_hook, py::function cache_free_hook) {
+  py::gil_scoped_acquire acquire;
   // Initialize base cache structure with exception safety
   cache_t* cache = nullptr;
   std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter> params;
@@ -163,19 +164,26 @@ cache_t* pypluginCache_init(
 }
 
 static void pypluginCache_free(cache_t* cache) {
-  if (!cache || !cache->eviction_params) {
+  if (!cache) {
+    return;
+  }
+  if (!cache->eviction_params) {
+    // No params, just free the cache structure
+    cache_struct_free(cache);
     return;
   }
 
-  // Use smart pointer for automatic cleanup
-  std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter> params(
-      static_cast<pypluginCache_params_t*>(cache->eviction_params));
-
+  auto* raw_params = static_cast<pypluginCache_params_t*>(cache->eviction_params);
+  cache->eviction_params = nullptr;
   // The smart pointer destructor will handle cleanup automatically
+  std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter> params(raw_params);
+  params.reset();
+
   cache_struct_free(cache);
 }
 
 static bool pypluginCache_get(cache_t* cache, const request_t* req) {
+  py::gil_scoped_acquire acquire;
   bool hit = cache_get_base(cache, req);
   pypluginCache_params_t* params =
       (pypluginCache_params_t*)cache->eviction_params;
@@ -204,6 +212,7 @@ static cache_obj_t* pypluginCache_to_evict(cache_t* cache,
 }
 
 static void pypluginCache_evict(cache_t* cache, const request_t* req) {
+  py::gil_scoped_acquire acquire;
   pypluginCache_params_t* params =
       (pypluginCache_params_t*)cache->eviction_params;
 
@@ -223,6 +232,7 @@ static void pypluginCache_evict(cache_t* cache, const request_t* req) {
 }
 
 static bool pypluginCache_remove(cache_t* cache, const obj_id_t obj_id) {
+  py::gil_scoped_acquire acquire;
   pypluginCache_params_t* params =
       (pypluginCache_params_t*)cache->eviction_params;
 
@@ -568,7 +578,8 @@ void export_cache(py::module& m) {
             bytes_req > 0 ? 1.0 - (double)bytes_hit / bytes_req : 0.0;
         return std::make_tuple(obj_miss_ratio, byte_miss_ratio);
       },
-      "cache"_a, "reader"_a, "start_req"_a = 0, "max_req"_a = -1);
+      "cache"_a, "reader"_a, "start_req"_a = 0, "max_req"_a = -1,
+      py::call_guard<py::gil_scoped_release>());
 }
 
 }  // namespace libcachesim
