@@ -324,8 +324,9 @@ class TraceReader(ReaderProtocol):
     def get_num_of_req(self) -> int:
         return self._reader.get_num_of_req()
 
-    def read_one_req(self) -> Request:
-        req = Request()
+    def read_one_req(self, req: Optional[Request] = None) -> Request:
+        if req is None:
+            req = Request()
         ret = self._reader.read_one_req(req)  # return 0 if success
         if ret != 0:
             raise RuntimeError("Failed to read one request")

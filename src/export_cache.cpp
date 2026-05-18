@@ -312,7 +312,10 @@ void export_cache(py::module& m) {
               return py::cast(
                   std::unique_ptr<cache_obj_t, CacheObjectDeleter>(dummy_obj));
             }
-            return py::cast(obj, py::return_value_policy::reference);
+            return py::cast(*obj);
+            // NOTE(haocheng): we return a copy of the object instead of reference
+            // to avoid dangling reference in Python
+            // return py::cast(obj, py::return_value_policy::reference);
           },
           "req"_a, "update_cache"_a = true)
       .def(
@@ -324,15 +327,17 @@ void export_cache(py::module& m) {
       .def(
           "insert",
           [](cache_t& self,
-             const request_t& req) -> std::optional<cache_obj_t*> {
+             const request_t& req) -> py::object {
             cache_obj_t* inserted = self.insert(&self, &req);
             if (inserted == nullptr) {
-              return std::nullopt;
+              return py::none();
             }
-            return inserted;
+            return py::cast(*inserted);
+            // NOTE(haocheng): we return a copy of the object instead of reference
+            // to avoid dangling reference in Python
+            // return inserted;
           },
-          "req"_a,
-          py::return_value_policy::reference  // optional still respected
+          "req"_a
           )
 
       .def(
@@ -358,7 +363,10 @@ void export_cache(py::module& m) {
           "to_evict",
           [](cache_t& self, const request_t& req) {
             cache_obj_t* obj = self.to_evict(&self, &req);
-            return py::cast(obj, py::return_value_policy::reference);
+            return py::cast(*obj);
+            // NOTE(haocheng): we return a copy of the object instead of reference
+            // to avoid dangling reference in Python
+            // return py::cast(obj, py::return_value_policy::reference);
           },
           "req"_a)
       .def("get_occupied_byte",
