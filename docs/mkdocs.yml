@@ -9,9 +9,9 @@ docs_dir: src
 nav:
   - Home: 
     - libCacheSim Python: index.md
-    - Getting Started: 
-      - getting_started/quickstart.md
+    - Getting Started:
       - getting_started/installation.md
+      - getting_started/quickstart.md
     - Examples:
       - examples/reader.md
       - examples/simulation.md
@@ -85,11 +85,14 @@ plugins:
           build: true
           nav_translations:
             Home: 首页
-            Getting Started: 快速开始
+            Getting Started: 入门指南
             User Guide: 用户指南
             Developer Guide: 开发者指南
             API Reference: API参考
             Examples: 使用示例
+            FAQ: 常见问题
+            General: 总览
+            API Documentation: API 文档
 
 markdown_extensions:
   - attr_list

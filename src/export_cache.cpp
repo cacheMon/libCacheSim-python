@@ -482,6 +482,7 @@ void export_cache(py::module& m) {
   make_cache_wrapper<CAR_init>("CAR_init")(m);
   make_cache_wrapper<Cacheus_init>("Cacheus_init")(m);
   make_cache_wrapper<Clock_init>("Clock_init")(m);
+  make_cache_wrapper<Clock2QPlus_init>("Clock2QPlus_init")(m);
   make_cache_wrapper<ClockPro_init>("ClockPro_init")(m);
   make_cache_wrapper<FIFO_init>("FIFO_init")(m);
   make_cache_wrapper<FIFO_Merge_init>("FIFO_Merge_init")(m);
@@ -495,7 +496,9 @@ void export_cache(py::module& m) {
   make_cache_wrapper<LFUDA_init>("LFUDA_init")(m);
   make_cache_wrapper<LIRS_init>("LIRS_init")(m);
   make_cache_wrapper<LRU_init>("LRU_init")(m);
+  make_cache_wrapper<LRU_K_init>("LRU_K_init")(m);
   make_cache_wrapper<LRU_Prob_init>("LRU_Prob_init")(m);
+  make_cache_wrapper<MQ_init>("MQ_init")(m);
   make_cache_wrapper<nop_init>("nop_init")(m);
 
   make_cache_wrapper<QDLP_init>("QDLP_init")(m);

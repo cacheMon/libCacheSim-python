@@ -16,13 +16,16 @@ from libcachesim import (
     ARC,
     Clock,
     Random,
+    LRUK,
     # Advanced algorithms
     S3FIFO,
     Sieve,
     LIRS,
     TwoQ,
     SLRU,
+    MQ,
     WTinyLFU,
+    Clock2QPlus,
     # Request and other utilities
     Request,
     ReqOp,
@@ -79,15 +82,18 @@ class TestCacheBasicFunctionality:
             ARC,
             Clock,
             Random,
+            LRUK,
             S3FIFO,
             Sieve,
             LIRS,
             TwoQ,
             SLRU,
+            MQ,
             WTinyLFU,
             LeCaR,
             LFUDA,
             ClockPro,
+            Clock2QPlus,
             Cacheus,
             LRUProb,
             FlashProb,
@@ -111,7 +117,8 @@ class TestCacheBasicFunctionality:
                 pytest.skip(f"Cache {cache_class.__name__} failed to initialize: {e}")
 
     @pytest.mark.parametrize(
-        "cache_class", [LHD, LRU, FIFO, LFU, ARC, Clock, Random, S3FIFO, Sieve, LIRS, TwoQ, SLRU, WTinyLFU]
+        "cache_class",
+        [LHD, LRU, FIFO, LFU, ARC, Clock, Random, LRUK, S3FIFO, Sieve, LIRS, TwoQ, SLRU, MQ, WTinyLFU, Clock2QPlus],
     )
     def test_basic_get_and_insert(self, cache_class):
         """Test basic get and insert operations"""
@@ -154,15 +161,18 @@ class TestCacheBasicFunctionality:
             ARC,
             Clock,
             Random,
+            LRUK,
             S3FIFO,
             Sieve,
             LIRS,
             TwoQ,
             SLRU,
+            MQ,
             WTinyLFU,
             LeCaR,
             LFUDA,
             ClockPro,
+            Clock2QPlus,
             Cacheus,
             LRUProb,
             FlashProb,
@@ -206,15 +216,18 @@ class TestCacheBasicFunctionality:
             ARC,
             Clock,
             Random,
+            LRUK,
             S3FIFO,
             Sieve,
             LIRS,
             TwoQ,
             SLRU,
+            MQ,
             WTinyLFU,
             LeCaR,
             LFUDA,
             ClockPro,
+            Clock2QPlus,
             Cacheus,
             LRUProb,
             FlashProb,
@@ -254,15 +267,18 @@ class TestCacheBasicFunctionality:
             ARC,
             Clock,
             Random,
+            LRUK,
             S3FIFO,
             Sieve,
             LIRS,
             TwoQ,
             SLRU,
+            MQ,
             WTinyLFU,
             LeCaR,
             LFUDA,
             ClockPro,
+            Clock2QPlus,
             Cacheus,
             LRUProb,
             FlashProb,
@@ -552,3 +568,74 @@ class TestCacheOptionalAlgorithms:
         trace = SyntheticReader(num_of_req=10000, obj_size=100, dist="uniform", num_objects=1000, seed=42)
         cache = LRU(0.5, reader=trace)
         assert cache.cache_size == 0.5 * trace.get_working_set_size()[1]
+
+class TestNewAlgorithmParameters:
+    """Test cache-specific parameters of the recently added algorithms
+
+    NOTE: out-of-range parameters are rejected by libCacheSim's ERROR() macro,
+    which aborts the process instead of raising, so they cannot be tested here.
+    """
+
+    @pytest.mark.parametrize("k", [1, 2, 4])
+    def test_lruk_k_parameter(self, k):
+        """LRU-K should accept different values of k and stay functional"""
+        reader = SyntheticReader(num_of_req=1000, obj_size=100, alpha=1.0, dist="zipf", num_objects=100, seed=42)
+        cache = LRUK(1024 * 10, k=k)
+        miss_ratio, _ = cache.process_trace(reader)
+        assert 0.0 <= miss_ratio <= 1.0
+
+    @pytest.mark.parametrize("n_queue", [1, 4, 8])
+    def test_mq_n_queue_parameter(self, n_queue):
+        """MQ should honor n_queue, which is reflected in the cache name"""
+        cache = MQ(1024 * 10, n_queue=n_queue)
+        assert cache.cache_name == f"MQ-{n_queue}"
+
+    def test_mq_lifetime_and_qout_parameters(self):
+        """MQ should accept a custom lifetime and ghost queue ratio"""
+        reader = SyntheticReader(num_of_req=1000, obj_size=100, alpha=1.0, dist="zipf", num_objects=100, seed=42)
+        cache = MQ(1024 * 10, n_queue=4, lifetime=100, qout_size_ratio=2.0)
+        miss_ratio, _ = cache.process_trace(reader)
+        assert 0.0 <= miss_ratio <= 1.0
+
+    def test_clock2qplus_parameters(self):
+        """Clock2QPlus should honor its ratio/threshold parameters"""
+        cache = Clock2QPlus(
+            1024 * 10,
+            fifo_size_ratio=0.2,
+            ghost_size_ratio=0.8,
+            move_to_main_threshold=2,
+            corr_window_ratio=0.3,
+        )
+        # cache_name is "Clock2QPlus-<fifo-size-ratio>-<threshold>-<corr-window-ratio>"
+        assert cache.cache_name == "Clock2QPlus-0.2000-2-0.30"
+
+    @pytest.mark.parametrize("n_samples", [32, 128])
+    def test_beladysize_n_samples(self, n_samples):
+        """BeladySize must accept n_samples
+
+        Regression test: the binding used to emit the key "n-samples" while the
+        C parser only accepts "n-sample", which aborted the process on every
+        BeladySize construction.
+        """
+        from libcachesim import BeladySize
+
+        reader = SyntheticReader(num_of_req=1000, obj_size=100, alpha=1.0, dist="zipf", num_objects=100, seed=42)
+        cache = BeladySize(1024 * 10, n_samples=n_samples)
+        miss_ratio, _ = cache.process_trace(reader)
+        assert 0.0 <= miss_ratio <= 1.0
+
+    def test_belady_process_trace(self):
+        """Belady should produce a valid miss ratio on a synthetic trace"""
+        from libcachesim import Belady
+
+        reader = SyntheticReader(num_of_req=1000, obj_size=100, alpha=1.0, dist="zipf", num_objects=100, seed=42)
+        cache = Belady(1024 * 10)
+        miss_ratio, _ = cache.process_trace(reader)
+        assert 0.0 <= miss_ratio <= 1.0
+
+    def test_clock2qplus_process_trace(self):
+        """Clock2QPlus should produce a valid miss ratio on a synthetic trace"""
+        reader = SyntheticReader(num_of_req=1000, obj_size=100, alpha=1.0, dist="zipf", num_objects=100, seed=42)
+        cache = Clock2QPlus(1024 * 10)
+        miss_ratio, _ = cache.process_trace(reader)
+        assert 0.0 <= miss_ratio <= 1.0

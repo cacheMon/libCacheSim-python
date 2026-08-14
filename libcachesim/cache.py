@@ -17,6 +17,8 @@ from .libcachesim_python import (
     LIRS_init,
     TwoQ_init,
     SLRU_init,
+    LRU_K_init,
+    MQ_init,
     # Advanced algorithms
     S3FIFO_init,
     Sieve_init,
@@ -24,6 +26,7 @@ from .libcachesim_python import (
     LeCaR_init,
     LFUDA_init,
     ClockPro_init,
+    Clock2QPlus_init,
     Cacheus_init,
     # Optimal algorithms
     Belady_init,
@@ -227,6 +230,36 @@ class LRU(CacheBase):
     ):
         super().__init__(
             _cache=LRU_init(_create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata, reader)),
+            admissioner=admissioner
+        )
+
+
+class LRUK(CacheBase):
+    """LRU-K: evict the object with the largest backward K-distance
+
+    Objects accessed fewer than K times have an infinite backward K-distance
+    and are evicted first in FIFO order.
+
+    Special parameters:
+    k: the number of recent accesses to track (default: 2)
+    """
+
+    def __init__(
+        self,
+        cache_size: int | float,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        k: int = 2,
+        admissioner: AdmissionerBase = None,
+        reader: ReaderProtocol = None,
+    ):
+        cache_specific_params = f"k={k}"
+        super().__init__(
+            _cache=LRU_K_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata, reader),
+                cache_specific_params,
+            ),
             admissioner=admissioner
         )
 
@@ -447,12 +480,51 @@ class SLRU(CacheBase):
         )
 
 
+class MQ(CacheBase):
+    """Multi-Queue replacement algorithm
+
+    Objects are held in a hierarchy of LRU queues ordered by access frequency;
+    an object that is not re-accessed within its lifetime is demoted to the
+    next lower queue. Evicted objects keep their frequency in a FIFO ghost
+    queue (Qout).
+
+    Special parameters:
+    n_queue: number of queues in the hierarchy, must be in [1, 64] (default: 8)
+    lifetime: number of requests an object may stay in its queue without being
+        accessed before it is demoted (default: 10000)
+    qout_size_ratio: size of the Qout ghost queue relative to the cache size,
+        must be in (0, 64] (default: 4.0)
+    """
+
+    def __init__(
+        self,
+        cache_size: int | float,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        n_queue: int = 8,
+        lifetime: int = 10000,
+        qout_size_ratio: float = 4.0,
+        admissioner: AdmissionerBase = None,
+        reader: ReaderProtocol = None,
+    ):
+        cache_specific_params = f"n-queue={n_queue}, lifetime={lifetime}, Qout-size-ratio={qout_size_ratio}"
+        super().__init__(
+            _cache=MQ_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata, reader),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
+        )
+
+
 class WTinyLFU(CacheBase):
     """Window TinyLFU
 
     Special parameters:
     main_cache: the type of the main cache (default: "SLRU")
-    window_size: ratio of the window size to the main cache size (default: 0.01)
+    window_size: ratio of the window LRU size to the total cache size, must be
+        in [0, 1); the main cache receives the remainder (default: 0.01)
     """
 
     def __init__(
@@ -552,6 +624,45 @@ class ClockPro(CacheBase):
         )
 
 
+class Clock2QPlus(CacheBase):
+    """Clock-2Q+ replacement algorithm
+
+    A 2Q variant that uses a small FIFO probationary queue in front of a Clock
+    main cache, with a ghost queue and an adaptive correlation window.
+
+    Special parameters:
+    fifo_size_ratio: ratio of the FIFO queue size to the total cache size (default: 0.1)
+    ghost_size_ratio: ratio of the ghost queue size to the total cache size (default: 0.9)
+    move_to_main_threshold: number of hits before an object is promoted to the main cache (default: 1)
+    corr_window_ratio: initial ratio of the correlation window to the FIFO queue size (default: 0.5)
+    """
+
+    def __init__(
+        self,
+        cache_size: int | float,
+        default_ttl: int = 86400 * 300,
+        hashpower: int = 24,
+        consider_obj_metadata: bool = False,
+        fifo_size_ratio: float = 0.1,
+        ghost_size_ratio: float = 0.9,
+        move_to_main_threshold: int = 1,
+        corr_window_ratio: float = 0.5,
+        admissioner: AdmissionerBase = None,
+        reader: ReaderProtocol = None,
+    ):
+        cache_specific_params = (
+            f"fifo-size-ratio={fifo_size_ratio}, ghost-size-ratio={ghost_size_ratio}, "
+            f"move-to-main-threshold={move_to_main_threshold}, corr-window-ratio={corr_window_ratio}"
+        )
+        super().__init__(
+            _cache=Clock2QPlus_init(
+                _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata, reader),
+                cache_specific_params,
+            ),
+            admissioner=admissioner
+        )
+
+
 class Cacheus(CacheBase):
     """Cacheus algorithm (no special parameters)"""
 
@@ -606,7 +717,8 @@ class BeladySize(CacheBase):
         admissioner: AdmissionerBase = None,
         reader: ReaderProtocol = None,
     ):
-        cache_specific_params = f"n-samples={n_samples}"
+        # NOTE: the C parser accepts "n-sample" (singular)
+        cache_specific_params = f"n-sample={n_samples}"
         super().__init__(
             _cache=BeladySize_init(
                 _create_common_params(cache_size, default_ttl, hashpower, consider_obj_metadata, reader),

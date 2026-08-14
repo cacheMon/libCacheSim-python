@@ -18,7 +18,7 @@ class Request:
     def __init__(
         self,
         obj_size: int = 1,
-        op: ReqOp = ReqOp.READ,
+        op: ReqOp = ReqOp.OP_NOP,
         valid: bool = True,
         obj_id: int = 0,
         clock_time: int = 0,
@@ -140,7 +140,7 @@ class Cache:
 
 class CacheBase:
     """Base class for all cache implementations"""
-    def __init__(self, _cache: Cache): ...
+    def __init__(self, _cache: Cache, admissioner: Optional["AdmissionerBase"] = None): ...
     def get(self, req: Request) -> bool: ...
     def find(self, req: Request, update_cache: bool = True) -> CacheObject: ...
     def can_insert(self, req: Request) -> bool: ...
@@ -151,6 +151,7 @@ class CacheBase:
     def to_evict(self, req: Request) -> CacheObject: ...
     def get_occupied_byte(self) -> int: ...
     def get_n_obj(self) -> int: ...
+    def set_cache_size(self, new_size: int) -> None: ...
     def print_cache(self) -> str: ...
     def process_trace(self, reader: ReaderProtocol, start_req: int = 0, max_req: int = -1) -> tuple[float, float]: ...
     @property
@@ -194,6 +195,11 @@ class Random(CacheBase):
         self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
+class LRUK(CacheBase):
+    def __init__(
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, k: int = 2, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
+    ): ...
+
 # Advanced algorithms
 class S3FIFO(CacheBase):
     def __init__(
@@ -220,6 +226,11 @@ class SLRU(CacheBase):
         self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
+class MQ(CacheBase):
+    def __init__(
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, n_queue: int = 8, lifetime: int = 10000, qout_size_ratio: float = 4.0, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
+    ): ...
+
 class WTinyLFU(CacheBase):
     def __init__(
         self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, main_cache: str = "SLRU", window_size: float = 0.01, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
@@ -238,6 +249,11 @@ class LFUDA(CacheBase):
 class ClockPro(CacheBase):
     def __init__(
         self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, init_ref: int = 0, init_ratio_cold: float = 0.5, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
+    ): ...
+
+class Clock2QPlus(CacheBase):
+    def __init__(
+        self, cache_size: int | float, default_ttl: int = 25920000, hashpower: int = 24, consider_obj_metadata: bool = False, fifo_size_ratio: float = 0.1, ghost_size_ratio: float = 0.9, move_to_main_threshold: int = 1, corr_window_ratio: float = 0.5, admissioner: Optional["AdmissionerBase"] = None, reader: Optional[ReaderProtocol] = None
     ): ...
 
 class Cacheus(CacheBase):
@@ -323,7 +339,12 @@ class PluginCache(CacheBase):
 # Readers
 class TraceReader(ReaderProtocol):
     c_reader: bool
-    def __init__(self, trace: str, trace_type: TraceType = TraceType.UNKNOWN_TRACE, **kwargs): ...
+    def __init__(
+        self,
+        trace: str,
+        trace_type: TraceType = TraceType.UNKNOWN_TRACE,
+        reader_init_params: Optional[ReaderInitParam] = None,
+    ): ...
 
 class SyntheticReader(ReaderProtocol):
     c_reader: bool
@@ -360,7 +381,13 @@ def create_uniform_requests(
 
 # Analyzer
 class TraceAnalyzer:
-    def __init__(self, analyzer, reader: ReaderProtocol, output_path: str, analysis_param, analysis_option): ...
+    def __init__(
+        self,
+        reader: ReaderProtocol,
+        output_path: str,
+        analysis_param: Optional[AnalysisParam] = None,
+        analysis_option: Optional[AnalysisOption] = None,
+    ): ...
     def run(self) -> None: ...
     def cleanup(self) -> None: ...
 
