@@ -30,7 +30,29 @@ analyzer.run()
 - `analysis_param: AnalysisParam`（可选）——这些分析的调节参数。默认为 `AnalysisParam()`。
 
 !!! important
-    分析器完全运行在 C++ 后端，因此只接受由 C 实现的 reader——实际上就是 [`TraceReader`](reader.md)。传入 `SyntheticReader` 会抛出 `ReaderException: Only C/C++ reader is supported`。若要分析合成负载，请先用 `Util.convert_to_oracleGeneral` 将其写出，再用 `TraceReader` 重新打开。
+    分析器完全运行在 C++ 后端，因此只接受由 C 实现的 reader——实际上就是 [`TraceReader`](reader.md)。传入 `SyntheticReader` 会抛出 `ReaderException: Only C/C++ reader is supported`。`Util.convert_to_oracleGeneral` 也无法作为桥梁——它接受的是原生 reader，传入 `SyntheticReader` 会抛出 `TypeError`。若要分析合成负载，请先把它的请求写成 trace 文件，再用 `TraceReader` 打开：
+
+    ```py
+    import libcachesim as lcs
+
+    synthetic = lcs.SyntheticReader(num_of_req=10000, obj_size=100, dist="zipf",
+                                    alpha=1.0, num_objects=1000, seed=42)
+
+    with open("synthetic.csv", "w") as f:
+        for req in synthetic:
+            if not req.valid:
+                break
+            f.write(f"{req.clock_time},{req.obj_id},{req.obj_size}\n")
+
+    init_params = lcs.ReaderInitParam(has_header=False, delimiter=",", obj_id_is_num=True)
+    init_params.time_field = 1
+    init_params.obj_id_field = 2
+    init_params.obj_size_field = 3
+
+    reader = lcs.TraceReader("synthetic.csv", lcs.TraceType.CSV_TRACE, init_params)
+    analyzer = lcs.TraceAnalyzer(reader, "synthetic_analysis")
+    analyzer.run()
+    ```
 
 ## 选择分析项 {#selecting-analyses}
 

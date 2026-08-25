@@ -77,7 +77,9 @@ class CacheBase(ABC):
     def need_eviction(self, req: Request) -> bool:
         return self._cache.need_eviction(req)
 
-    def evict(self, req: Request) -> CacheObject:
+    def evict(self, req: Request) -> None:
+        # The C eviction callback returns void, so this is always None; use
+        # to_evict() to inspect the victim before it is removed.
         return self._cache.evict(req)
 
     def remove(self, obj_id: int) -> bool:

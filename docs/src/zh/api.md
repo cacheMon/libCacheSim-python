@@ -38,7 +38,7 @@ Request(
 
 ### `CacheObject`
 
-由 `Cache.find`、`insert`、`evict` 和 `to_evict` 返回，暴露只读的 `obj_id` 和 `obj_size`。
+由 `Cache.find`、`insert` 和 `to_evict` 返回，暴露只读的 `obj_id` 和 `obj_size`。注意 `evict` 返回的是 `None`——它转发到缓存的 `void` 淘汰回调；若需要在对象被移除前查看淘汰候选，请使用 `to_evict`。
 
 ## 枚举类型
 
@@ -192,7 +192,7 @@ PluginCache(
 )
 ```
 
-各 hook 的签名见[插件系统](examples/plugins.md#plugincache)。`set_hooks(...)` 可以替换已有实例上的 hook。
+各 hook 的签名见[插件系统](examples/plugins.md#plugincache)。hook 在构造时固定，如需更换请新建一个 `PluginCache`。
 
 ## 准入策略
 
@@ -289,7 +289,7 @@ create_uniform_requests(num_objects, num_requests, obj_size=4000,
                         time_span=604800, start_obj_id=0, seed=None) -> Iterator[Request]
 ```
 
-两者返回的都是**迭代器**而非列表；如果需要重复回放，请用 `list(...)` 包一层。
+两者返回的都是**可重复迭代**的生成器对象而非列表：每次 `for` 循环都会重新开始一轮，且在固定 `seed` 下每轮产生的序列完全相同。因此无需用 `list(...)` 包一层来重复回放；对于大规模负载更不应这样做，否则会一次性把所有 `Request` materialize 到内存中。
 
 ## `TraceAnalyzer`
 

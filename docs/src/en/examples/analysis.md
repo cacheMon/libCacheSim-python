@@ -36,8 +36,32 @@ The constructor arguments are:
 !!! important
     The analyzer runs entirely in the C++ backend, so it only accepts a C-backed reader — in
     practice, [`TraceReader`](reader.md). Passing a `SyntheticReader` raises
-    `ReaderException: Only C/C++ reader is supported`. To analyse a synthetic workload, write it
-    out first with `Util.convert_to_oracleGeneral` and reopen it with `TraceReader`.
+    `ReaderException: Only C/C++ reader is supported`. `Util.convert_to_oracleGeneral` cannot
+    bridge the gap either — it takes a native reader, so handing it a `SyntheticReader` raises
+    `TypeError`. To analyse a synthetic workload, write its requests out as a trace file and
+    reopen that with `TraceReader`:
+
+    ```py
+    import libcachesim as lcs
+
+    synthetic = lcs.SyntheticReader(num_of_req=10000, obj_size=100, dist="zipf",
+                                    alpha=1.0, num_objects=1000, seed=42)
+
+    with open("synthetic.csv", "w") as f:
+        for req in synthetic:
+            if not req.valid:
+                break
+            f.write(f"{req.clock_time},{req.obj_id},{req.obj_size}\n")
+
+    init_params = lcs.ReaderInitParam(has_header=False, delimiter=",", obj_id_is_num=True)
+    init_params.time_field = 1
+    init_params.obj_id_field = 2
+    init_params.obj_size_field = 3
+
+    reader = lcs.TraceReader("synthetic.csv", lcs.TraceType.CSV_TRACE, init_params)
+    analyzer = lcs.TraceAnalyzer(reader, "synthetic_analysis")
+    analyzer.run()
+    ```
 
 ## Selecting analyses
 

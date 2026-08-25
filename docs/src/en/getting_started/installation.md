@@ -60,16 +60,26 @@ bash scripts/install_deps.sh
 bash scripts/install_deps_user.sh
 ```
 
-Then reinstall, passing the options through `CMAKE_ARGS`. Add `--no-cache-dir` to force a
-rebuild rather than reusing a cached wheel:
+Then reinstall, passing the options through `CMAKE_ARGS`. The flags only take effect during a
+*source* build, so the install has to be forced to run one: `--no-cache-dir` on its own is not
+enough, because pip may report `Requirement already satisfied` or install a prebuilt wheel, and
+in either case `CMAKE_ARGS` is silently ignored. Build from the checkout instead:
 
 ```bash
 # Enable one algorithm
-CMAKE_ARGS="-DENABLE_LRB=ON" pip install libcachesim --no-cache-dir
+CMAKE_ARGS="-DENABLE_LRB=ON" pip install --force-reinstall .
 
 # Or enable all three
 CMAKE_ARGS="-DENABLE_LRB=ON -DENABLE_3L_CACHE=ON -DENABLE_GLCACHE=ON" \
-    pip install libcachesim --no-cache-dir
+    pip install --force-reinstall .
+```
+
+To build from PyPI rather than a checkout, also disable wheels so that a source build actually
+happens:
+
+```bash
+CMAKE_ARGS="-DENABLE_LRB=ON" \
+    pip install --force-reinstall --no-binary libcachesim libcachesim
 ```
 
 !!! important
@@ -101,10 +111,27 @@ bash scripts/install.sh
 bash scripts/install.sh --all
 ```
 
-Building the extension requires a C++17 compiler, CMake ≥ 3.15, and Ninja. The build is driven
-by [scikit-build-core](https://scikit-build-core.readthedocs.io/), which configures and builds
-the bundled C library before compiling the [pybind11](https://pybind11.readthedocs.io/)
-bindings.
+Building the extension requires a C++17 compiler, CMake ≥ 3.15, and Ninja, plus three native
+dependencies that CMake looks for at configure time: **pkg-config**, **GLib 2.0** and
+**Zstandard**. All three are mandatory — `CMakeLists.txt` declares them with
+`find_package(PkgConfig REQUIRED)`, `pkg_check_modules(GLib REQUIRED glib-2.0)` and
+`find_package(ZSTD REQUIRED)` — and a missing one aborts configuration before any code is
+compiled, with an error such as `No package 'glib-2.0' found`.
+
+The dependency scripts above install them on the platforms they cover (`install_deps.sh` targets
+yum-based distributions and macOS). On Debian/Ubuntu, use the submodule's script or install them
+directly:
+
+```bash
+bash src/libCacheSim/scripts/install_dependency.sh
+
+# or, the minimum needed to configure the build
+sudo apt install -y pkg-config libglib2.0-dev libzstd-dev
+```
+
+The build itself is driven by [scikit-build-core](https://scikit-build-core.readthedocs.io/),
+which configures and builds the bundled C library before compiling the
+[pybind11](https://pybind11.readthedocs.io/) bindings.
 
 ## Troubleshooting
 

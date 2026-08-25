@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .libcachesim_python import (
     Cache,
+    CacheObject,
     Request,
     ReqOp,
     ReaderInitParam,
@@ -77,6 +78,7 @@ from .util import Util
 __all__ = [
     # Core classes
     "Cache",
+    "CacheObject",
     "Request",
     "ReqOp",
     "ReaderInitParam",

@@ -40,8 +40,9 @@ Request(
 
 ### `CacheObject`
 
-Returned by `Cache.find`, `insert`, `evict`, and `to_evict`. Exposes read-only `obj_id` and
-`obj_size`.
+Returned by `Cache.find`, `insert`, and `to_evict`. Exposes read-only `obj_id` and
+`obj_size`. Note that `evict` returns `None` — it delegates to the cache's `void` eviction
+callback, so use `to_evict` if you need to inspect the victim before it is removed.
 
 ## Enumerations
 
@@ -210,7 +211,7 @@ PluginCache(
 ```
 
 Hook signatures are documented in [Plugin System](examples/plugins.md#plugincache).
-`set_hooks(...)` replaces the hooks on an existing instance.
+Hooks are fixed at construction time; build a new `PluginCache` to change them.
 
 ## Admission policies
 
@@ -320,7 +321,10 @@ create_uniform_requests(num_objects, num_requests, obj_size=4000,
                         time_span=604800, start_obj_id=0, seed=None) -> Iterator[Request]
 ```
 
-Both return an **iterator**, not a list; wrap in `list(...)` if you need to replay them twice.
+Both return a **re-iterable** generator object, not a list: each `for` loop over it starts a
+fresh pass, and with a fixed `seed` every pass yields the same sequence. There is no need to
+wrap them in `list(...)` to replay them, and for large workloads you should not — that
+materialises every `Request` at once.
 
 ## `TraceAnalyzer`
 

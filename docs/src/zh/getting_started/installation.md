@@ -56,15 +56,22 @@ bash scripts/install_deps.sh
 bash scripts/install_deps_user.sh
 ```
 
-然后通过 `CMAKE_ARGS` 传入选项重新安装。加上 `--no-cache-dir` 可以强制重新构建，而不是复用缓存的 wheel：
+然后通过 `CMAKE_ARGS` 传入选项重新安装。这些选项只在**源码构建**时生效，因此必须强制走源码构建：仅加 `--no-cache-dir` 是不够的，pip 仍可能提示 `Requirement already satisfied` 或直接安装预编译 wheel，这两种情况下 `CMAKE_ARGS` 都会被静默忽略。请改为从当前 checkout 构建：
 
 ```bash
 # 启用单个算法
-CMAKE_ARGS="-DENABLE_LRB=ON" pip install libcachesim --no-cache-dir
+CMAKE_ARGS="-DENABLE_LRB=ON" pip install --force-reinstall .
 
 # 或者三个全部启用
 CMAKE_ARGS="-DENABLE_LRB=ON -DENABLE_3L_CACHE=ON -DENABLE_GLCACHE=ON" \
-    pip install libcachesim --no-cache-dir
+    pip install --force-reinstall .
+```
+
+若要从 PyPI 而不是 checkout 构建，还需要禁用 wheel，确保真正执行源码构建：
+
+```bash
+CMAKE_ARGS="-DENABLE_LRB=ON" \
+    pip install --force-reinstall --no-binary libcachesim libcachesim
 ```
 
 !!! important
@@ -90,7 +97,18 @@ bash scripts/install.sh
 bash scripts/install.sh --all
 ```
 
-构建扩展需要支持 C++17 的编译器、CMake ≥ 3.15 以及 Ninja。构建过程由 [scikit-build-core](https://scikit-build-core.readthedocs.io/) 驱动，它会先配置并构建内置的 C 库，再编译 [pybind11](https://pybind11.readthedocs.io/) 绑定。
+构建扩展需要支持 C++17 的编译器、CMake ≥ 3.15 以及 Ninja，另外还需要三个在 configure 阶段查找的原生依赖：**pkg-config**、**GLib 2.0** 和 **Zstandard**。这三者都是必需的——`CMakeLists.txt` 中分别以 `find_package(PkgConfig REQUIRED)`、`pkg_check_modules(GLib REQUIRED glib-2.0)` 和 `find_package(ZSTD REQUIRED)` 声明——缺少任意一个都会在编译任何代码之前中断配置，并报出类似 `No package 'glib-2.0' found` 的错误。
+
+上文的依赖脚本会在其支持的平台上安装它们（`install_deps.sh` 面向基于 yum 的发行版和 macOS）。在 Debian/Ubuntu 上，请使用子模块提供的脚本，或直接安装：
+
+```bash
+bash src/libCacheSim/scripts/install_dependency.sh
+
+# 或者只装配置构建所需的最小集合
+sudo apt install -y pkg-config libglib2.0-dev libzstd-dev
+```
+
+构建本身由 [scikit-build-core](https://scikit-build-core.readthedocs.io/) 驱动，它会先配置并构建内置的 C 库，再编译 [pybind11](https://pybind11.readthedocs.io/) 绑定。
 
 ## 疑难排查
 
