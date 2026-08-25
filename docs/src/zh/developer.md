@@ -43,9 +43,12 @@ pip install -e ".[dev]"
 
 `dev` 附加依赖会引入 `pytest`、`ruff`、`mypy` 和 `pre-commit`。
 
-`scripts/install.sh` 会完成上述全部步骤并随后运行测试。加上 `--all` 可启用可选的学习型算法：
+`scripts/install.sh` 自动化了其中大部分工作：更新子模块、以可编辑模式安装、验证导入，并运行测试。注意它安装的是普通的 `-e .` 外加 `pytest`，**并非**完整的 `dev` 附加依赖——如果需要 `ruff`、`mypy` 和 `pre-commit`，仍要执行上面的命令。加上 `--all` 可启用可选的学习型算法：
 
 ```bash
+# --all 只是打开 CMake 选项；请先安装 LightGBM/XGBoost，
+# 否则配置阶段会因 LIGHTGBM_PATH not found 而失败
+bash scripts/install_deps.sh        # 无 sudo 权限时用 install_deps_user.sh
 bash scripts/install.sh --all
 ```
 

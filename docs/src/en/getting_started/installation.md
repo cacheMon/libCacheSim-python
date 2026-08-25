@@ -102,7 +102,7 @@ pip install .
 ```
 
 `scripts/install.sh` wraps the whole flow — it updates the submodule, installs the package in
-editable mode, checks that the import works, and runs the test suite:
+editable mode (`pip install -e .`), checks that the import works, and runs the test suite:
 
 ```bash
 bash scripts/install.sh
@@ -110,6 +110,16 @@ bash scripts/install.sh
 # Same, but with all optional algorithms enabled
 bash scripts/install.sh --all
 ```
+
+!!! warning "`--all` needs the learned-algorithm dependencies first"
+    `--all` only turns the three CMake options on; it does **not** install LightGBM and XGBoost.
+    On a machine that does not already have them, the build then fails during configuration with
+    an error such as `LIGHTGBM_PATH not found`. Run the dependency script first:
+
+    ```bash
+    bash scripts/install_deps.sh        # or install_deps_user.sh without sudo
+    bash scripts/install.sh --all
+    ```
 
 Building the extension requires a C++17 compiler, CMake ≥ 3.15, and Ninja, plus three native
 dependencies that CMake looks for at configure time: **pkg-config**, **GLib 2.0** and

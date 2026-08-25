@@ -45,10 +45,15 @@ pip install -e ".[dev]"
 
 The `dev` extra brings in `pytest`, `ruff`, `mypy`, and `pre-commit`.
 
-`scripts/install.sh` does all of the above and then runs the tests. Pass `--all` to enable the
-optional learned algorithms:
+`scripts/install.sh` automates most of this: it updates the submodule, installs the package
+editable, verifies the import, and runs the tests. Note that it installs plain `-e .` plus
+`pytest`, **not** the full `dev` extra — so `ruff`, `mypy` and `pre-commit` still need the
+command above if you want them. Pass `--all` to enable the optional learned algorithms:
 
 ```bash
+# --all only flips the CMake options on; install LightGBM/XGBoost first or
+# configuration fails with LIGHTGBM_PATH not found
+bash scripts/install_deps.sh        # or install_deps_user.sh without sudo
 bash scripts/install.sh --all
 ```
 

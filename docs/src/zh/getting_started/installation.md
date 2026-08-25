@@ -88,7 +88,7 @@ git submodule update --init --recursive
 pip install .
 ```
 
-`scripts/install.sh` 封装了整个流程——它会更新子模块、以可编辑模式安装本包、检查导入是否正常，并运行测试套件：
+`scripts/install.sh` 封装了整个流程——它会更新子模块、以可编辑模式安装本包（`pip install -e .`）、检查导入是否正常，并运行测试套件：
 
 ```bash
 bash scripts/install.sh
@@ -96,6 +96,14 @@ bash scripts/install.sh
 # 同上，但启用全部可选算法
 bash scripts/install.sh --all
 ```
+
+!!! warning "`--all` 需要先安装学习型算法的依赖"
+    `--all` 只是打开三个 CMake 选项，并**不会**安装 LightGBM 和 XGBoost。在尚未装好它们的机器上，构建会在配置阶段失败，报出类似 `LIGHTGBM_PATH not found` 的错误。请先运行依赖脚本：
+
+    ```bash
+    bash scripts/install_deps.sh        # 无 sudo 权限时用 install_deps_user.sh
+    bash scripts/install.sh --all
+    ```
 
 构建扩展需要支持 C++17 的编译器、CMake ≥ 3.15 以及 Ninja，另外还需要三个在 configure 阶段查找的原生依赖：**pkg-config**、**GLib 2.0** 和 **Zstandard**。这三者都是必需的——`CMakeLists.txt` 中分别以 `find_package(PkgConfig REQUIRED)`、`pkg_check_modules(GLib REQUIRED glib-2.0)` 和 `find_package(ZSTD REQUIRED)` 声明——缺少任意一个都会在编译任何代码之前中断配置，并报出类似 `No package 'glib-2.0' found` 的错误。
 
