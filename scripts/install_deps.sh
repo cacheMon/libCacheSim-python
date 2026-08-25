@@ -165,7 +165,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 	log_info "Detected macOS system, installing dependencies via brew..."
 
 	# Install basic dependencies via Homebrew
-	brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm
+	brew install glib gperftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm pkgconf
 
 elif command -v apt-get >/dev/null 2>&1; then
 	log_info "Detected Debian/Ubuntu system, installing dependencies via apt..."
