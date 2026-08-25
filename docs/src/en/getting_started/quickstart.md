@@ -5,7 +5,7 @@ This guide will help you get started with libCacheSim.
 ## Prerequisites
 
 - OS: Linux / macOS
-- Python: 3.9 -- 3.13
+- Python: 3.10 -- 3.13
 
 ## Installation
 
@@ -19,34 +19,8 @@ source .venv/bin/activate
 uv pip install libcachesim
 ```
 
-For users who want to run LRB, ThreeLCache, and GLCache eviction algorithms:
-
-!!! important
-    if `uv` cannot find built wheels for your machine, the building system will skip these algorithms by default.
-
-To enable them, you need to install all third-party dependencies first.
-
-!!! note
-    To install all dependencies, you can use these scripts provided.
-    ```bash
-    git clone https://github.com/cacheMon/libCacheSim-python.git
-    cd libCacheSim-python
-    bash scripts/install_deps.sh
-
-    # If you cannot install software directly (e.g., no sudo access)
-    bash scripts/install_deps_user.sh
-    ```
-
-Then, you can reinstall libcachesim using the following commands (may need to add `--no-cache-dir` to force it to build from scratch):
-
-```bash
-# Enable LRB
-CMAKE_ARGS="-DENABLE_LRB=ON" uv pip install libcachesim
-# Enable ThreeLCache
-CMAKE_ARGS="-DENABLE_3L_CACHE=ON" uv pip install libcachesim
-# Enable GLCache
-CMAKE_ARGS="-DENABLE_GLCACHE=ON" uv pip install libcachesim
-```
+See [Installation](installation.md) for building from source, and for enabling the LRB,
+ThreeLCache, and GLCache eviction algorithms, which are excluded from source builds by default.
 
 ## Cache Simulation
 
@@ -97,6 +71,22 @@ The above example demonstrates the basic workflow of using `libcachesim` for cac
 4. Optionally, process only a portion of the trace by specifying `start_req` and `max_req` for partial simulation.
 
 This workflow applies to most cache algorithms and trace types, making it easy to get started and customize your experiments.
+
+### Sizing the cache relative to the trace
+
+Absolute byte counts are awkward when comparing traces of very different sizes. Passing
+`cache_size` as a `float` in `(0, 1]` instead interprets it as a fraction of the trace's working
+set, which requires handing the cache a `reader`:
+
+```python
+cache = lcs.S3FIFO(
+    cache_size=0.1,  # 10% of the trace's working set size in bytes
+    reader=reader,   # Required whenever cache_size is a float
+)
+```
+
+An `int` is always an absolute byte count, so `1024` means 1 KiB while `1024.0` is out of range
+and raises `ValueError`.
 
 ## Trace Analysis
 
@@ -158,7 +148,7 @@ Here is an example of implement `LRU` via the plugin system.
     from collections import OrderedDict
     from typing import Any
 
-    from libcachesim import PluginCache, LRU, CommonCacheParams, Request
+    from libcachesim import PluginCache, LRU, CommonCacheParams, Request, SyntheticReader
 
     def init_hook(_: CommonCacheParams) -> Any:
         return OrderedDict()
@@ -190,7 +180,7 @@ Here is an example of implement `LRU` via the plugin system.
         cache_name="Plugin_LRU",
     )
 
-    reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1)
+    reader = SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1)
     req_miss_ratio, byte_miss_ratio = plugin_lru_cache.process_trace(reader)
     ref_req_miss_ratio, ref_byte_miss_ratio = LRU(128).process_trace(reader)
     print(f"plugin req miss ratio {req_miss_ratio}, ref req miss ratio {ref_req_miss_ratio}")
@@ -199,6 +189,11 @@ Here is an example of implement `LRU` via the plugin system.
 
 By defining custom hook functions for cache initialization, hit, miss, eviction, removal, and cleanup, users can easily prototype and test their own cache eviction algorithms.
 
+## Next steps
 
-
-
+- [Trace Reader](../examples/reader.md) — opening local and S3 traces, slicing, and iteration
+- [Cache Simulation](../examples/simulation.md) — every eviction algorithm and admission policy,
+  with their parameters
+- [Trace Analysis](../examples/analysis.md) — workload characterisation with `TraceAnalyzer`
+- [Plugin System](../examples/plugins.md) — hook signatures for custom caches and admissioners
+- [API Reference](../api.md) — the complete exported surface

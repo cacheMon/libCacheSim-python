@@ -21,6 +21,22 @@ log_error() {
 	echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
+# Elevation helper.
+#
+# This script is both a developer convenience and cibuildwheel's `before-all`
+# (see [tool.cibuildwheel] in pyproject.toml), where it runs as root inside the
+# manylinux container with no sudo available. Running as root leaves SUDO empty,
+# so every command below is byte-for-byte what it was before this helper existed.
+SUDO=""
+if [[ ${EUID} -ne 0 ]]; then
+	if command -v sudo >/dev/null 2>&1; then
+		SUDO="sudo"
+	else
+		log_error "This script needs root privileges, but neither root nor sudo is available."
+		exit 1
+	fi
+fi
+
 # Install and configure g++ version
 install_gcc() {
 	log_info "Installing and configuring g++ version..."
@@ -96,7 +112,7 @@ install_zstd() {
 	pushd _build >/dev/null
 	cmake -G Ninja ..
 	ninja
-	ninja install
+	${SUDO} ninja install
 	popd >/dev/null
 	popd >/dev/null
 	popd >/dev/null
@@ -114,7 +130,7 @@ install_xgboost() {
 	pushd build >/dev/null
 	cmake -G Ninja ..
 	ninja
-	ninja install
+	${SUDO} ninja install
 	popd >/dev/null
 	popd >/dev/null
 	popd >/dev/null
@@ -132,16 +148,45 @@ install_lightgbm() {
 	pushd build >/dev/null
 	cmake -G Ninja ..
 	ninja
-	ninja install
+	${SUDO} ninja install
 	popd >/dev/null
 	popd >/dev/null
 	popd >/dev/null
 }
 
-# Detect OS and install dependencies
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-	log_info "Detected Linux system, installing dependencies via yum..."
-	
+# Detect OS and install dependencies.
+#
+# Dispatch on the available package manager rather than on $OSTYPE alone, so that
+# this covers the same platforms as upstream's
+# src/libCacheSim/scripts/install_dependency.sh (Debian/Ubuntu/WSL, macOS,
+# CentOS/RHEL). macOS is matched first; the manylinux images used for the release
+# wheels ship yum/dnf but no apt-get, so they still take the yum branch below.
+if [[ "$OSTYPE" == "darwin"* ]]; then
+	log_info "Detected macOS system, installing dependencies via brew..."
+
+	# Install basic dependencies via Homebrew
+	brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm
+
+elif command -v apt-get >/dev/null 2>&1; then
+	log_info "Detected Debian/Ubuntu system, installing dependencies via apt..."
+
+	${SUDO} apt-get update
+	# CMakeLists.txt requires pkg-config, GLib 2.0 and Zstandard; the rest mirrors
+	# upstream's setup_ubuntu. Unlike the yum branch there is no need to build CMake
+	# or Zstd from source, since apt ships cmake >= 3.15 and libzstd-dev.
+	${SUDO} apt-get install -y --no-install-recommends \
+		build-essential pkg-config git wget cmake ninja-build \
+		libglib2.0-dev libzstd-dev \
+		libgoogle-perftools-dev google-perftools xxhash libunwind-dev
+
+	# Needed by the optional learned algorithms (ENABLE_GLCACHE / ENABLE_3L_CACHE /
+	# ENABLE_LRB); no distro packages provide the CMake config files these need.
+	install_xgboost
+	install_lightgbm
+
+elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
+	log_info "Detected CentOS/RHEL system, installing dependencies via yum..."
+
 	# Enable EPEL repository
 	yum install -y epel-release
 	
@@ -167,15 +212,9 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 	install_zstd
 	install_xgboost
 	install_lightgbm
-	
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-	log_info "Detected macOS system, installing dependencies via brew..."
-	
-	# Install basic dependencies via Homebrew
-	brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm
-	
+
 else
-	log_error "Unsupported operating system: $OSTYPE"
+	log_error "Unsupported operating system: $OSTYPE (no brew, apt-get, yum or dnf found)"
 	exit 1
 fi
 

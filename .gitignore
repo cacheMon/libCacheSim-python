@@ -153,6 +153,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+docs/site/
 
 # mypy
 .mypy_cache/
@@ -233,3 +234,4 @@ CMakeFiles/*
 *.pyc
 !scripts/smart_build.py
 uv.lock
+.claude/

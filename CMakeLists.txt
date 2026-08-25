@@ -274,7 +274,14 @@ set_target_properties(libcachesim_python PROPERTIES
     INSTALL_RPATH "$ORIGIN"
 )
 
-target_compile_definitions(libcachesim_python PRIVATE VERSION_INFO=${PROJECT_VERSION})
+if(DEFINED SKBUILD_PROJECT_VERSION AND NOT SKBUILD_PROJECT_VERSION STREQUAL "")
+    set(LCS_PYTHON_VERSION ${SKBUILD_PROJECT_VERSION})
+else()
+    set(LCS_PYTHON_VERSION "dev")
+endif()
+message(STATUS "libcachesim_python version: ${LCS_PYTHON_VERSION}")
+
+target_compile_definitions(libcachesim_python PRIVATE VERSION_INFO=${LCS_PYTHON_VERSION})
 
 # =============================================================================
 # Platform-Specific Configuration

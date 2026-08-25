@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .libcachesim_python import (
     Cache,
+    CacheObject,
     Request,
     ReqOp,
     ReaderInitParam,
@@ -26,16 +27,19 @@ from .cache import (
     ARC,
     Clock,
     Random,
+    LRUK,
     # Advanced algorithms
     S3FIFO,
     Sieve,
     LIRS,
     TwoQ,
     SLRU,
+    MQ,
     WTinyLFU,
     LeCaR,
     LFUDA,
     ClockPro,
+    Clock2QPlus,
     Cacheus,
     # Optimal algorithms
     Belady,
@@ -74,6 +78,7 @@ from .util import Util
 __all__ = [
     # Core classes
     "Cache",
+    "CacheObject",
     "Request",
     "ReqOp",
     "ReaderInitParam",
@@ -92,16 +97,19 @@ __all__ = [
     "ARC",
     "Clock",
     "Random",
+    "LRUK",
     # Advanced cache algorithms
     "S3FIFO",
     "Sieve",
     "LIRS",
     "TwoQ",
     "SLRU",
+    "MQ",
     "WTinyLFU",
     "LeCaR",
     "LFUDA",
     "ClockPro",
+    "Clock2QPlus",
     "Cacheus",
     # Optimal algorithms
     "Belady",

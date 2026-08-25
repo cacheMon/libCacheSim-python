@@ -2,13 +2,14 @@
 
 1.  How to resolve when pip install fails?
 
-    See [installation](https://cachemon.github.io/libCacheSim-python/getting_started/installation/).
+    See [Installation](getting_started/installation.md).
 
 2.  Get an error message like "cannot find Python package" when building.
 
     The reason is that building Python bindings requires Python's development headers and libraries.
     
     If you have administrative privileges, you can use your system's package manager to install the required package. For example:
+
     *   **Debian/Ubuntu**: `sudo apt install python3-dev`
     *   **RHEL/CentOS/Fedora**: `sudo yum install python3-devel`
     *   **macOS**: Installing Python with Homebrew (`brew install python`) is usually sufficient.
