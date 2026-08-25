@@ -29,18 +29,23 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(BASE_C_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
 set(BASE_CXX_FLAGS "-fPIC -fno-strict-overflow -fno-strict-aliasing")
 
-# Compiler-specific flags
+# Compiler-specific flags.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(COMPILER_SPECIFIC_FLAGS "-Wno-cast-user-defined -Wno-array-bounds -Wno-type-limits")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(COMPILER_SPECIFIC_FLAGS "-Wno-array-bounds")
+    set(COMPILER_SPECIFIC_C_FLAGS "-Wno-array-bounds -Wno-type-limits")
+    set(COMPILER_SPECIFIC_CXX_FLAGS "-Wno-cast-user-defined ${COMPILER_SPECIFIC_C_FLAGS}")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # GLCache/segment.c stores INT64_MAX into a double field; AppleClang 21 flags the
+    # value change as -Wimplicit-const-int-float-conversion and -Werror makes it fatal.
+    set(COMPILER_SPECIFIC_C_FLAGS "-Wno-array-bounds -Wno-implicit-const-int-float-conversion")
+    set(COMPILER_SPECIFIC_CXX_FLAGS "${COMPILER_SPECIFIC_C_FLAGS}")
 else()
-    set(COMPILER_SPECIFIC_FLAGS "")
+    set(COMPILER_SPECIFIC_C_FLAGS "")
+    set(COMPILER_SPECIFIC_CXX_FLAGS "")
 endif()
 
 # Apply flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BASE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BASE_C_FLAGS} ${COMPILER_SPECIFIC_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_CXX_FLAGS}")
 
 # =============================================================================
 # Git Submodule Management
@@ -80,13 +85,16 @@ endif()
 function(build_libcachesim)
     message(STATUS "Building libCacheSim...")
     
-    # Prepare CMake arguments for subproject
+    # Prepare CMake arguments for subproject.
+    # The C flags carry the compiler-specific suppressions too: libCacheSim is mostly
+    # C, and passing them only to the C++ compiler left its C sources exposed to
+    # upstream's -Werror.
     set(CMAKE_ARGS
-        "-DCMAKE_C_FLAGS=${BASE_C_FLAGS}"
-        "-DCMAKE_CXX_FLAGS=${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
-        "-DCMAKE_CXX_FLAGS_DEBUG=-g ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
-        "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
-        "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_FLAGS}"
+        "-DCMAKE_C_FLAGS=${BASE_C_FLAGS} ${COMPILER_SPECIFIC_C_FLAGS}"
+        "-DCMAKE_CXX_FLAGS=${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_CXX_FLAGS}"
+        "-DCMAKE_CXX_FLAGS_DEBUG=-g ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_CXX_FLAGS}"
+        "-DCMAKE_CXX_FLAGS_RELEASE=-O3 ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_CXX_FLAGS}"
+        "-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG ${BASE_CXX_FLAGS} ${COMPILER_SPECIFIC_CXX_FLAGS}"
     )
     
     # Configure libCacheSim
