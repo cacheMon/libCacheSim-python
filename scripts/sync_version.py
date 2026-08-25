@@ -13,6 +13,13 @@ import re
 from pathlib import Path
 
 
+# Matches the [project] version line. The trailing [^"]* accepts PEP 440 suffixes such
+# as ".post4", "rc1" or ".dev0" -- an earlier pattern required exactly N.N.N, so a
+# version like "0.3.3.post4" matched nothing and this script silently stopped syncing.
+# Anchoring on "dev" or a leading digit keeps it from matching pins like ">=3.15".
+VERSION_LINE_RE = r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+[^\"]*)\""
+
+
 def get_project_root():
     """Get the project root directory."""
     script_dir = Path(__file__).parent
@@ -52,7 +59,7 @@ def update_pyproject_toml(version):
         pyproject_data = f.read()
 
     # Update the version line in pyproject.toml, make it can match any version in version.txt, like "0.3.1" or "dev"
-    match = re.search(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", pyproject_data)
+    match = re.search(VERSION_LINE_RE, pyproject_data)
     if not match:
         print("Error: Could not find a valid version line in pyproject.toml", file=sys.stderr)
         return False
@@ -65,7 +72,8 @@ def update_pyproject_toml(version):
         print(f"Warning: pyproject version {current_version} is newer than version.txt {version}, skipping update")
         return False
     # replace the version line with the new version
-    pyproject_data = re.sub(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", f'version = "{version}"', pyproject_data)
+    # count=1: only the [project] version, never the tool version pins further down.
+    pyproject_data = re.sub(VERSION_LINE_RE, f'version = "{version}"', pyproject_data, count=1)
 
     # Write back to file with proper formatting
     with open(pyproject_toml_path, "w") as f:

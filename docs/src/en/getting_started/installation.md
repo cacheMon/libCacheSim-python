@@ -128,16 +128,25 @@ dependencies that CMake looks for at configure time: **pkg-config**, **GLib 2.0*
 `find_package(ZSTD REQUIRED)` — and a missing one aborts configuration before any code is
 compiled, with an error such as `No package 'glib-2.0' found`.
 
-The dependency scripts above install them on the platforms they cover (`install_deps.sh` targets
-yum-based distributions and macOS). On Debian/Ubuntu, use the submodule's script or install them
-directly:
+`scripts/install_deps.sh` installs them on Debian/Ubuntu, CentOS/RHEL and macOS, picking the
+package manager to use automatically. It calls `sudo` only when not already running as root:
 
 ```bash
-bash src/libCacheSim/scripts/install_dependency.sh
-
-# or, the minimum needed to configure the build
-sudo apt install -y pkg-config libglib2.0-dev libzstd-dev
+bash scripts/install_deps.sh
 ```
+
+Or, on Debian/Ubuntu or macOS, install just the three by hand:
+
+```bash
+# Debian/Ubuntu
+sudo apt install -y pkg-config libglib2.0-dev libzstd-dev
+
+# macOS
+brew install pkgconf glib zstd
+```
+
+On CentOS/RHEL prefer the script: it builds Zstandard from source, because the version in the
+base repositories is often too old.
 
 The build itself is driven by [scikit-build-core](https://scikit-build-core.readthedocs.io/),
 which configures and builds the bundled C library before compiling the

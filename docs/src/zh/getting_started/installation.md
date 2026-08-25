@@ -107,14 +107,23 @@ bash scripts/install.sh --all
 
 构建扩展需要支持 C++17 的编译器、CMake ≥ 3.15 以及 Ninja，另外还需要三个在 configure 阶段查找的原生依赖：**pkg-config**、**GLib 2.0** 和 **Zstandard**。这三者都是必需的——`CMakeLists.txt` 中分别以 `find_package(PkgConfig REQUIRED)`、`pkg_check_modules(GLib REQUIRED glib-2.0)` 和 `find_package(ZSTD REQUIRED)` 声明——缺少任意一个都会在编译任何代码之前中断配置，并报出类似 `No package 'glib-2.0' found` 的错误。
 
-上文的依赖脚本会在其支持的平台上安装它们（`install_deps.sh` 面向基于 yum 的发行版和 macOS）。在 Debian/Ubuntu 上，请使用子模块提供的脚本，或直接安装：
+`scripts/install_deps.sh` 会在 Debian/Ubuntu、CentOS/RHEL 和 macOS 上安装它们，并自动选择对应的包管理器；只有在非 root 身份运行时才会调用 `sudo`：
 
 ```bash
-bash src/libCacheSim/scripts/install_dependency.sh
-
-# 或者只装配置构建所需的最小集合
-sudo apt install -y pkg-config libglib2.0-dev libzstd-dev
+bash scripts/install_deps.sh
 ```
+
+如果不想运行该脚本，在 Debian/Ubuntu 或 macOS 上也可以手动只安装这三个依赖：
+
+```bash
+# Debian/Ubuntu
+sudo apt install -y pkg-config libglib2.0-dev libzstd-dev
+
+# macOS
+brew install pkgconf glib zstd
+```
+
+在 CentOS/RHEL 上建议直接使用脚本：它会从源码构建 Zstandard，因为基础仓库中的版本通常过旧。
 
 构建本身由 [scikit-build-core](https://scikit-build-core.readthedocs.io/) 驱动，它会先配置并构建内置的 C 库，再编译 [pybind11](https://pybind11.readthedocs.io/) 绑定。
 
