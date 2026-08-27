@@ -121,11 +121,21 @@ install_zstd() {
 # Install XGBoost from source
 install_xgboost() {
 	log_info "Installing XGBoost from source..."
+	# Pinned, not tracking master: XGBoost removed the deprecated XGBoosterPredict
+	# after v3.3.0, and libCacheSim's GLCache/inference.c still calls it, so a clone
+	# of master fails to compile with "implicit declaration of function". v3.3.0 is
+	# also what Homebrew installs, so the Linux and macOS wheels build against the
+	# same API. The directory carries the version so a checkout left in /tmp by an
+	# older run of this script is not silently reused.
+	local xgboost_version="v3.3.0"
+	local xgboost_dir="xgboost-${xgboost_version}"
+
 	pushd /tmp/ >/dev/null
-	if [[ ! -d "xgboost" ]]; then
-		git clone --recursive https://github.com/dmlc/xgboost
+	if [[ ! -d "${xgboost_dir}" ]]; then
+		git clone --recursive --depth 1 --branch "${xgboost_version}" \
+			https://github.com/dmlc/xgboost "${xgboost_dir}"
 	fi
-	pushd xgboost >/dev/null
+	pushd "${xgboost_dir}" >/dev/null
 	mkdir -p build
 	pushd build >/dev/null
 	cmake -G Ninja ..
@@ -139,11 +149,18 @@ install_xgboost() {
 # Install LightGBM from source
 install_lightgbm() {
 	log_info "Installing LightGBM from source..."
+	# Pinned for the same reason as XGBoost above -- an unpinned clone means the
+	# build depends on whatever master happens to be that day. v4.7.0 matches the
+	# version Homebrew installs for the macOS wheels.
+	local lightgbm_version="v4.7.0"
+	local lightgbm_dir="LightGBM-${lightgbm_version}"
+
 	pushd /tmp/ >/dev/null
-	if [[ ! -d "LightGBM" ]]; then
-		git clone --recursive https://github.com/microsoft/LightGBM
+	if [[ ! -d "${lightgbm_dir}" ]]; then
+		git clone --recursive --depth 1 --branch "${lightgbm_version}" \
+			https://github.com/microsoft/LightGBM "${lightgbm_dir}"
 	fi
-	pushd LightGBM >/dev/null
+	pushd "${lightgbm_dir}" >/dev/null
 	mkdir -p build
 	pushd build >/dev/null
 	cmake -G Ninja ..
