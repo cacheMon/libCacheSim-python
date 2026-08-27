@@ -1,6 +1,6 @@
 from abc import ABC
 import logging
-from typing import Callable, Optional
+from typing import Callable
 from .libcachesim_python import (
     CommonCacheParams,
     Request,
@@ -65,7 +65,7 @@ class CacheBase(ABC):
     def get(self, req: Request) -> bool:
         return self._cache.get(req)
 
-    def find(self, req: Request, update_cache: bool = True) -> Optional[CacheObject]:
+    def find(self, req: Request, update_cache: bool = True) -> CacheObject | None:
         return self._cache.find(req, update_cache)
 
     def can_insert(self, req: Request) -> bool:
@@ -431,7 +431,7 @@ class LIRS(CacheBase):
             admissioner=admissioner
         )
 
-    def insert(self, req: Request) -> Optional[CacheObject]:
+    def insert(self, req: Request) -> CacheObject | None:
         return super().insert(req)
 
 
@@ -974,7 +974,7 @@ class PluginCache(CacheBase):
         cache_miss_hook: Callable,
         cache_eviction_hook: Callable,
         cache_remove_hook: Callable,
-        cache_free_hook: Optional[Callable] = None,
+        cache_free_hook: Callable | None = None,
         cache_name: str = "PythonHookCache",
         default_ttl: int = 86400 * 300,
         hashpower: int = 24,

@@ -168,7 +168,7 @@ cd docs && mkdocs build --clean --strict
 
 | 工作流 | 触发条件 | 作用 |
 |---|---|---|
-| `.github/workflows/build.yml` | `src/`、`libcachesim/`、`tests/` 下的改动 | 在 Ubuntu 和 macOS（Intel 与 Apple Silicon）上针对 Python 3.10–3.13 构建并测试，同时单独构建文档 |
+| `.github/workflows/build.yml` | `src/`、`libcachesim/`、`tests/` 下的改动 | 在 Ubuntu 和 macOS（Apple Silicon）上针对 Python 3.11–3.14 构建并测试，同时单独构建文档 |
 | `.github/workflows/docs.yml` | `docs/` 下的改动 | 以 `--strict` 构建，并在 `main` 分支上部署到 GitHub Pages |
 | `.github/workflows/pypi-release.yml` | 发布 release，或手动触发 | 用 cibuildwheel 构建 wheel 并发布到 PyPI |
 

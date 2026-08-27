@@ -16,7 +16,7 @@ import statistics
 import psutil
 import logging
 import threading
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Dict
 from dataclasses import dataclass
 
 # Default configuration
@@ -123,7 +123,7 @@ class CacheSimulationBenchmark:
         process = psutil.Process(os.getpid())
         return process.memory_info().rss / 1024 / 1024
     
-    def _find_cachesim_binary(self) -> Optional[str]:
+    def _find_cachesim_binary(self) -> str | None:
         """Find the cachesim binary in common locations."""
         possible_paths = [
             "./src/libCacheSim/build/bin/cachesim",

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import overload, Union, Optional, Any
+from typing import overload
 from collections.abc import Iterator
 from urllib.parse import urlparse
 
@@ -105,9 +105,9 @@ class TraceReader(ReaderProtocol):
 
     def __init__(
         self,
-        trace: Union[Reader, str],
+        trace: Reader | str,
         trace_type: TraceType = TraceType.UNKNOWN_TRACE,
-        reader_init_params: Optional[ReaderInitParam] = None,
+        reader_init_params: ReaderInitParam | None = None,
     ):
         if isinstance(trace, Reader):
             self._reader = trace
@@ -375,7 +375,7 @@ class TraceReader(ReaderProtocol):
             raise StopIteration
         return req
 
-    def __getitem__(self, key: Union[int, slice]) -> Union[Request, TraceReaderSliceIterator]:
+    def __getitem__(self, key: int | slice) -> Request | TraceReaderSliceIterator:
         if isinstance(key, slice):
             # Handle slice
             total_len = self._reader.get_num_of_req()

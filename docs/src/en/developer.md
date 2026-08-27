@@ -194,7 +194,7 @@ that links keep working in local builds and under the locale fallback.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `.github/workflows/build.yml` | changes under `src/`, `libcachesim/`, `tests/` | Builds and tests on Ubuntu and macOS (Intel and Apple Silicon) across Python 3.10–3.13, and separately builds the docs |
+| `.github/workflows/build.yml` | changes under `src/`, `libcachesim/`, `tests/` | Builds and tests on Ubuntu and macOS (Apple Silicon) across Python 3.11–3.14, and separately builds the docs |
 | `.github/workflows/docs.yml` | changes under `docs/` | Builds with `--strict` and deploys to GitHub Pages on `main` |
 | `.github/workflows/pypi-release.yml` | published release, or manual dispatch | Builds wheels with cibuildwheel and publishes to PyPI |
 

@@ -7,7 +7,6 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import Optional, Union
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,7 @@ class _DataLoader:
     }
 
     def __init__(
-        self, bucket_name: str = DEFAULT_BUCKET, cache_dir: Optional[Union[str, Path]] = None, use_auth: bool = False
+        self, bucket_name: str = DEFAULT_BUCKET, cache_dir: str | Path | None = None, use_auth: bool = False
     ):
         self.bucket_name = self._validate_bucket_name(bucket_name)
         self.cache_dir = Path(cache_dir) if cache_dir else self.DEFAULT_CACHE_DIR
@@ -201,7 +200,7 @@ class _DataLoader:
                 temp.unlink()
             raise RuntimeError(f"Download failed for s3://{self.bucket_name}/{key}: {e}")
 
-    def load(self, key: str, force: bool = False, mode: str = "rb") -> Union[bytes, str]:
+    def load(self, key: str, force: bool = False, mode: str = "rb") -> bytes | str:
         path = self._cache_path(key)
         if not path.exists() or force:
             self._download(key, path)
@@ -221,7 +220,7 @@ class _DataLoader:
         except ValueError:
             return False
 
-    def clear_cache(self, key: Optional[str] = None) -> None:
+    def clear_cache(self, key: str | None = None) -> None:
         if key:
             try:
                 path = self._cache_path(key)
@@ -270,7 +269,7 @@ class _DataLoader:
 _data_loader = _DataLoader()
 
 
-def set_cache_dir(cache_dir: Union[str, Path]) -> None:
+def set_cache_dir(cache_dir: str | Path) -> None:
     """
     Set the global cache directory for S3 downloads.
 
@@ -300,7 +299,7 @@ def get_cache_dir() -> Path:
     return _data_loader.cache_dir
 
 
-def clear_cache(s3_path: Optional[str] = None) -> None:
+def clear_cache(s3_path: str | None = None) -> None:
     """
     Clear cached files.
 

@@ -6,7 +6,6 @@ This module provides functions to generate synthetic traces with different distr
 
 import numpy as np
 import random
-from typing import Optional, Union, Any
 from collections.abc import Iterator
 from .libcachesim_python import Request, ReqOp
 
@@ -44,10 +43,10 @@ class SyntheticReader(ReaderProtocol):
         obj_size: int = 4000,
         time_span: int = 86400 * 7,
         start_obj_id: int = 0,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         alpha: float = 1.0,
         dist: str = "zipf",
-        num_objects: Optional[int] = None,
+        num_objects: int | None = None,
     ):
         """
         Initialize synthetic reader.
@@ -92,7 +91,7 @@ class SyntheticReader(ReaderProtocol):
             random.seed(seed)
 
         # Lazy generation: generate object IDs only when needed
-        self._obj_ids: Optional[np.ndarray] = None
+        self._obj_ids: np.ndarray | None = None
 
     @property
     def obj_ids(self) -> np.ndarray:
@@ -226,7 +225,7 @@ class SyntheticReader(ReaderProtocol):
 
         return self.read_one_req()
 
-    def __getitem__(self, key: Union[int, slice]) -> Union[Request, SyntheticReaderSliceIterator]:
+    def __getitem__(self, key: int | slice) -> Request | SyntheticReaderSliceIterator:
         """Support index and slice access"""
         if isinstance(key, slice):
             # Handle slice
@@ -309,7 +308,7 @@ class _BaseRequestGenerator:
         obj_size: int = 4000,
         time_span: int = 86400 * 7,
         start_obj_id: int = 0,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """Initialize base request generator."""
         if num_objects <= 0 or num_requests <= 0:
@@ -362,7 +361,7 @@ class _ZipfRequestGenerator(_BaseRequestGenerator):
         obj_size: int = 4000,
         time_span: int = 86400 * 7,
         start_obj_id: int = 0,
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """Initialize Zipf request generator."""
         if alpha < 0:
@@ -390,7 +389,7 @@ def create_zipf_requests(
     obj_size: int = 4000,
     time_span: int = 86400 * 7,
     start_obj_id: int = 0,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> _ZipfRequestGenerator:
     """Create a Zipf-distributed request generator.
 
@@ -423,7 +422,7 @@ def create_uniform_requests(
     obj_size: int = 4000,
     time_span: int = 86400 * 7,
     start_obj_id: int = 0,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> _UniformRequestGenerator:
     """Create a uniform-distributed request generator.
 
