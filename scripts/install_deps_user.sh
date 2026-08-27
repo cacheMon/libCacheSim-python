@@ -236,14 +236,22 @@ EOF
 install_xgboost() {
     log_step "Installing XGBoost..."
     
+    # Pinned rather than tracking master: XGBoost removed the deprecated
+    # XGBoosterPredict after v3.3.0, which libCacheSim's GLCache/inference.c still
+    # calls, so master no longer compiles. See install_deps.sh for the full note.
+    local xgboost_version="v3.3.0"
+
     pushd "${HOME}/src" >/dev/null
-    
+
     if [[ ! -d "xgboost" ]]; then
         git clone --recursive https://github.com/dmlc/xgboost.git
     fi
-    
+
     pushd xgboost >/dev/null
-    git pull origin master
+    # Fetch and check out the tag instead of pulling master -- this also repoints a
+    # checkout that an older version of this script left on master.
+    git fetch --tags origin
+    git checkout --quiet "${xgboost_version}"
     git submodule update --init --recursive
     
     mkdir -p build
@@ -262,14 +270,18 @@ install_xgboost() {
 install_lightgbm() {
     log_step "Installing LightGBM..."
     
+    # Pinned for the same reason as XGBoost above; v4.7.0 matches Homebrew's version.
+    local lightgbm_version="v4.7.0"
+
     pushd "${HOME}/src" >/dev/null
-    
+
     if [[ ! -d "LightGBM" ]]; then
         git clone --recursive https://github.com/microsoft/LightGBM.git
     fi
-    
+
     pushd LightGBM >/dev/null
-    git pull origin master
+    git fetch --tags origin
+    git checkout --quiet "${lightgbm_version}"
     git submodule update --init --recursive
     
     mkdir -p build
