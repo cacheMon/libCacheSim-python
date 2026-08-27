@@ -10,6 +10,11 @@
 
 不支持 Windows。
 
+!!! note "关于 macOS wheel"
+    发布的 macOS wheel 仅面向 Apple Silicon（arm64），且要求 **macOS 15 及以上**。这些 wheel
+    捆绑了 Homebrew 的动态库，而 Homebrew 只为发布机所用的 macOS 版本构建这些库，因此下限由此
+    决定。在 Intel Mac 或更旧的 macOS 上，`pip` 会回退到“从源码安装”。
+
 ## 从 PyPI 安装
 
 我们已将预编译的 wheel 发布到 [PyPI](https://pypi.org/project/libcachesim/)，因此大多数情况下无需编译器：
