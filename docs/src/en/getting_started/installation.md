@@ -10,6 +10,12 @@
 
 Windows is not supported.
 
+!!! note "macOS wheels"
+    The published macOS wheels are Apple Silicon (arm64) only and require **macOS 15 or
+    newer**. They bundle Homebrew libraries, which are built for the macOS version of the
+    release runner and set that floor. On an Intel Mac or an older macOS, `pip` falls back
+    to [building from source](#install-from-source).
+
 ## Install from PyPI
 
 Pre-built wheels are published to [PyPI](https://pypi.org/project/libcachesim/), so in most
