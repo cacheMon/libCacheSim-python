@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/build.yml)
 [![Documentation](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml/badge.svg)](https://github.com/cacheMon/libCacheSim-python/actions/workflows/docs.yml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/cacheMon/libCacheSim-python)
 
 
 libCacheSim is fast with the features from [underlying libCacheSim lib](https://github.com/1a1a11a/libCacheSim):
